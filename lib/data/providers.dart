@@ -1,0 +1,55 @@
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import '../core/network/supabase_client.dart';
+import 'datasources/supabase_auth_datasource.dart';
+import 'datasources/supabase_user_datasource.dart';
+import 'datasources/supabase_hall_datasource.dart';
+import 'datasources/supabase_membership_datasource.dart';
+import 'datasources/supabase_session_datasource.dart';
+import 'datasources/supabase_booking_datasource.dart';
+import 'datasources/supabase_attendance_datasource.dart';
+import 'datasources/supabase_program_datasource.dart';
+import 'datasources/supabase_diet_datasource.dart';
+import 'datasources/supabase_payment_datasource.dart';
+import 'datasources/supabase_report_datasource.dart';
+import 'datasources/supabase_notification_datasource.dart';
+import 'repositories_impl/auth_repository_impl.dart';
+import 'repositories_impl/user_repository_impl.dart';
+import 'repositories_impl/hall_repository_impl.dart';
+import 'repositories_impl/membership_repository_impl.dart';
+import 'repositories_impl/session_repository_impl.dart';
+import 'repositories_impl/booking_repository_impl.dart';
+import 'repositories_impl/attendance_repository_impl.dart';
+import 'repositories_impl/program_repository_impl.dart';
+import 'repositories_impl/diet_repository_impl.dart';
+import 'repositories_impl/payment_repository_impl.dart';
+import 'repositories_impl/report_repository_impl.dart';
+import 'repositories_impl/notification_repository_impl.dart';
+import '../domain/repositories/i_notification_repository.dart';
+
+// Datasources
+final authDatasourceProvider = Provider((ref) => SupabaseAuthDatasource(ref.read(supabaseClientProvider)));
+final userDatasourceProvider = Provider((ref) => SupabaseUserDatasource(ref.read(supabaseClientProvider)));
+final hallDatasourceProvider = Provider((ref) => SupabaseHallDatasource(ref.read(supabaseClientProvider)));
+final membershipDatasourceProvider = Provider((ref) => SupabaseMembershipDatasource(ref.read(supabaseClientProvider)));
+final sessionDatasourceProvider = Provider((ref) => SupabaseSessionDatasource(ref.read(supabaseClientProvider)));
+final bookingDatasourceProvider = Provider((ref) => SupabaseBookingDatasource(ref.read(supabaseClientProvider)));
+final attendanceDatasourceProvider = Provider((ref) => SupabaseAttendanceDatasource(ref.read(supabaseClientProvider)));
+final programDatasourceProvider = Provider((ref) => SupabaseProgramDatasource(ref.read(supabaseClientProvider)));
+final dietDatasourceProvider = Provider((ref) => SupabaseDietDatasource(ref.read(supabaseClientProvider)));
+final paymentDatasourceProvider = Provider((ref) => SupabasePaymentDatasource(ref.read(supabaseClientProvider)));
+final reportDatasourceProvider = Provider((ref) => SupabaseReportDatasource(ref.read(supabaseClientProvider)));
+final notificationDatasourceProvider = Provider((ref) => SupabaseNotificationDatasource(ref.read(supabaseClientProvider)));
+
+// Repositories
+final authRepositoryProvider = Provider((ref) => AuthRepositoryImpl(ref.read(authDatasourceProvider)));
+final userRepositoryProvider = Provider((ref) => UserRepositoryImpl(ref.read(userDatasourceProvider)));
+final hallRepositoryProvider = Provider((ref) => HallRepositoryImpl(ref.read(hallDatasourceProvider)));
+final membershipRepositoryProvider = Provider((ref) => MembershipRepositoryImpl(ref.read(membershipDatasourceProvider)));
+final sessionRepositoryProvider = Provider((ref) => SessionRepositoryImpl(ref.read(sessionDatasourceProvider)));
+final bookingRepositoryProvider = Provider((ref) => BookingRepositoryImpl(ref.read(bookingDatasourceProvider)));
+final attendanceRepositoryProvider = Provider((ref) => AttendanceRepositoryImpl(ref.read(attendanceDatasourceProvider)));
+final programRepositoryProvider = Provider((ref) => ProgramRepositoryImpl(ref.read(programDatasourceProvider)));
+final dietRepositoryProvider = Provider((ref) => DietRepositoryImpl(ref.read(dietDatasourceProvider)));
+final paymentRepositoryProvider = Provider((ref) => PaymentRepositoryImpl(ref.read(paymentDatasourceProvider)));
+final reportRepositoryProvider = Provider((ref) => ReportRepositoryImpl(ref.read(reportDatasourceProvider)));
+final notificationRepositoryProvider = Provider<INotificationRepository>((ref) => NotificationRepositoryImpl(ref.read(notificationDatasourceProvider)));
