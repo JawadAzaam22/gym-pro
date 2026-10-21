@@ -1,654 +1,310 @@
-# Gym Pro
+# Gym Pro — نظام إدارة صالات رياضية
 
-Gym management system built with **Flutter** and **Supabase**, split into four role-based applications: **Admin**, **Reception**, **Trainer**, and **Trainee**.
+Gym management system built with **Flutter** and **Supabase**, split into four
+role-based applications served from three entry points: **Admin**,
+**Reception**, and a mobile app for **Trainer + Trainee**. Arabic-first UI with
+full RTL support.
 
 | | |
 |---|---|
-| **Platforms** | Android · iOS · Web · Windows · macOS |
-| **Language** | Dart `^3.5.4` · Flutter `3.24.x` |
-| **UI** | Arabic, full RTL, responsive from phone to desktop |
-| **Backend** | Supabase (PostgreSQL + Row Level Security + Realtime) |
-| **Size** | 222 Dart source files · 144 tests |
+| **Platforms** | Android · iOS · Web · Windows · macOS (see [platform status](#platform-status)) |
+| **Language** | Dart `3.5.4` · Flutter `3.24.5` |
+| **UI** | Arabic, full RTL, dark theme, responsive phone → desktop |
+| **Backend** | Supabase (PostgreSQL + Row Level Security + Realtime). Schema and server-side logic are managed in the Supabase project. |
+| **Size** | 222 Dart source files in `lib/` · 17 test files |
+
+[![CI](https://github.com/jawad-azzam/gym_pro/actions/workflows/ci.yml/badge.svg)](../../actions/workflows/ci.yml)
 
 ---
 
 ## Contents
 
-1. [Tech Stack](#1-tech-stack)
-2. [Repository Layout](#2-repository-layout)
+1. [What it does](#1-what-it-does)
+2. [Highlights](#2-highlights)
 3. [Architecture](#3-architecture)
-4. [Entry Points & Role Guard](#4-entry-points--role-guard)
-5. [Routing](#5-routing)
-6. [Domain Layer](#6-domain-layer)
-7. [Data Layer](#7-data-layer)
-8. [Presentation Layer](#8-presentation-layer)
-9. [Core Layer](#9-core-layer)
-10. [Database](#10-database)
-11. [Notifications](#11-notifications)
-12. [Design System](#12-design-system)
-13. [Code Generation & Analysis](#13-code-generation--analysis)
-14. [Testing](#14-testing)
-15. [Commands](#15-commands)
+4. [Entry points and role guard](#4-entry-points-and-role-guard)
+5. [Tech stack (resolved versions)](#5-tech-stack-resolved-versions)
+6. [Getting started](#6-getting-started)
+7. [Commands](#7-commands)
+8. [Notifications](#8-notifications)
+9. [Testing](#9-testing)
+10. [Platform status](#10-platform-status)
+11. [Known limitations](#11-known-limitations)
+12. [Built with AI assistance](#12-built-with-ai-assistance)
+13. [Author and license](#13-author-and-license)
 
 ---
 
-## 1. Tech Stack
+## 1. What it does
 
-| Concern | Package |
-|---|---|
-| State management | `flutter_riverpod` · `riverpod_annotation` · `riverpod_lint` |
-| Backend | `supabase_flutter` 2.x |
-| Navigation | `go_router` 14.x (`GoRoute` trees, one per role) |
-| Code generation | `freezed` · `json_serializable` · `build_runner` |
-| Serialization | `json_annotation` · `freezed_annotation` |
-| Responsive UI | `flutter_screenutil` · custom `ResponsiveLayout` |
-| Charts | `fl_chart` |
-| PDF export | `pdf` · `printing` |
-| QR | `qr_flutter` (generate) · `mobile_scanner` (scan) |
-| Local notifications | `flutter_local_notifications` 19.5 · `timezone` 0.10 |
-| Styling | `google_fonts` · `flutter_svg` · `cached_network_image` |
-| Functional helpers | `dartz` (`Either`) · `equatable` |
-| Env loading | `flutter_dotenv` |
-| Testing | `flutter_test` · `mocktail` |
-| Linting | `flutter_lints` · `custom_lint` · `riverpod_lint` |
+### Admin (web-first — `lib/main_admin.dart`)
+Dashboard with live stats and charts, user management (staff/trainees,
+created through Supabase Edge Functions), halls and access periods, group
+session templates, a weekly schedule view, and financial reports with PDF
+export.
+
+### Reception (web-first — `lib/main_reception.dart`)
+Member check-in (name/phone search or QR scan), membership create/renew with
+overlap validation, group and private-session booking with capacity checks,
+trainer assignment, manual payment recording, and a daily schedule.
+
+### Trainer (mobile — `lib/main_mobile.dart`)
+Trainee list with detail view, training-program builder (days → exercises),
+diet builder (days → meals), attendance history, fixed private-schedule view.
+
+### Trainee (mobile — `lib/main_mobile.dart`)
+Personal QR code for check-in, group-session booking, membership status,
+my-trainer page, program and diet viewers, booking/membership history,
+private-session bookings.
 
 ---
 
-## 2. Repository Layout
+## 2. Highlights
 
-```
-gym_pro/
-├── lib/
-│   ├── main_admin.dart              # entry point — Admin (web-first)
-│   ├── main_reception.dart          # entry point — Reception (web-first)
-│   ├── main_mobile.dart             # entry point — Trainer + Trainee (mobile-first)
-│   │
-│   ├── core/                        # 23 files — cross-cutting, no business rules
-│   │   ├── auth/                    # role_guard · session_role · auth_refresh
-│   │   ├── bootstrap/               # bootstrap() shared by all 3 entry points
-│   │   ├── constants/               # app_colors · app_dimensions · app_strings · enums
-│   │   ├── errors/                  # exceptions · failures · supabase_error
-│   │   ├── network/                 # supabase_client
-│   │   ├── notifications/           # local_notifications_service
-│   │   ├── theme/                   # app_theme · web_theme · mobile_theme
-│   │   └── utils/                   # formatters · validators · extensions ·
-│   │                                # pdf_report_generator · time_slot_generator …
-│   │
-│   ├── domain/                      # 49 files — pure Dart, framework-free
-│   │   ├── entities/                # 19 entities
-│   │   ├── repositories/            # i_*_repository.dart interfaces
-│   │   └── usecases/                # 18 use cases, grouped by feature folder
-│   │
-│   ├── data/                        # 44 files — Supabase implementation
-│   │   ├── models/                  # *_model.dart with fromJson / toJson
-│   │   ├── datasources/             # 12 supabase_*_datasource.dart
-│   │   ├── repositories_impl/       # classes implementing domain interfaces
-│   │   └── providers.dart           # central Riverpod wiring
-│   │
-│   └── presentation/                # 103 files
-│       ├── admin/       (16)        # dashboard · users · halls · sessions · finance
-│       ├── reception/   (19)        # checkin · memberships · bookings · payments
-│       ├── trainee/     (21)        # qr_code · bookings · my_program · my_diet
-│       ├── trainer/     (18)        # program_builder · diet_builder · trainees
-│       ├── shared/      (28)        # auth · notifications · schedule · settings · widgets
-│       └── mobile/      (1)         # mobile_router (trainer + trainee)
-│
-├── test/                            # 14 files · 144 tests
-├── supabase_migrations/             # 007 · 008 · 009
-├── assets/                          # fonts · images · icons · illustrations
-├── android/ ios/ web/ macos/ windows/
-├── analysis_options.yaml            # flutter_lints + riverpod_lint + custom_lint
-└── pubspec.yaml
-```
+All verified against the code in this repository:
+
+1. **Three clean layers** — `domain/` is pure Dart (zero Flutter/Supabase
+   imports, enforced by review); only `data/datasources/` touch Supabase
+   query builders.
+2. **Repository interfaces in the domain** — 12 `i_*_repository.dart`
+   interfaces; DI wiring in `lib/data/providers.dart`.
+3. **Realtime notifications** — Supabase Realtime stream per user with a live
+   unread badge (`notifications` table, RLS-scoped).
+4. **Role-based entry gating** — `RoleGuard` + per-entry router redirects;
+   wrong-role sessions are signed out.
+5. **Arabic PDF export** — Cairo font embedded in `pdf` documents with RTL
+   text direction.
+6. **QR check-in** — static per-trainee QR plus scanner with duplicate
+   same-day check-in prevention in the client.
+7. **Date-safe memberships** — date-only columns, overlap checks on create
+   and renew, RPC-assisted expiry sweep.
+8. **Widget + unit test suite** — 166 test cases across 17 files, including
+   server-contract parsing and deep-link mapping for notifications.
 
 ---
 
 ## 3. Architecture
 
-Clean architecture with three layers and a strictly unidirectional dependency flow:
+Clean Architecture with strictly unidirectional dependencies:
 
-```
-        ┌──────────────────────────────────────────────┐
-        │  presentation/                              │
-        │  screens · Riverpod controllers · routers   │
-        └───────────────┬──────────────────────────────┘
-                        │ depends on
-                        ▼
-        ┌──────────────────────────────────────────────┐
-        │  domain/                                    │
-        │  entities · repository interfaces · use     │
-        │  cases          (zero Flutter/Supabase)     │
-        └───────────────┬──────────────────────────────┘
-                        │ implemented by
-                        ▼
-        ┌──────────────────────────────────────────────┐
-        │  data/                                      │
-        │  models · datasources · repository          │
-        │  implementations                            │
-        └───────────────┬──────────────────────────────┘
-                        │ talks to
-                        ▼
-                  Supabase / PostgreSQL (+ RLS)
-
-   core/ is imported by every layer but imports nothing from them.
+```mermaid
+graph TD
+    P[presentation<br/>screens · controllers · routers] --> D[domain<br/>entities · use-case interfaces · failures]
+    DA[data<br/>models · datasources · repository impls] --> D
+    P --> DA
+    DA --> S[(Supabase<br/>PostgreSQL + RLS + Realtime)]
+    C[core<br/>theme · constants · utils · bootstrap] -. imported by all .-> P & DA & D
 ```
 
-### Rules enforced in this codebase
+Rules confirmed in this codebase:
 
-- **`domain/` is pure Dart.** No `import 'package:flutter/...'`, no Supabase types.
-  Entities are plain classes; repositories are abstract interfaces; use cases are
-  small classes with a single `call()` method.
-- **`data/` owns all conversion.** Every model extends its entity and exposes
-  `fromJson` / `toJson`. Only `datasources/` may reference `SupabaseQueryBuilder`.
-- **Errors flow left.** Data sources throw typed `Failure`s; repositories wrap
-  results in `Either<Failure, T>` via `dartz`; screens render the message instead
-  of crashing.
-- **Dependencies are injected through Riverpod.** Every bindable dependency lives
-  in `lib/data/providers.dart`. Repositories are declared as
-  `Provider<ISomeRepository>` (the interface, not the class) so tests can override
-  them without losing static typing.
-- **Use cases are the only callable verbs.** Screens never call a repository
-  directly — they go through a use case such as `BookSessionUc`, `RecordPaymentUc`,
-  or `GenerateReportUc`.
+- `lib/domain` contains **no** `package:flutter`, `package:supabase`, or
+  Riverpod imports — plain Dart + `equatable` + `dartz`.
+- Supabase query builders (`.from`, `.rpc`, `.stream`) appear **only** in
+  `lib/data/datasources` (plus one role lookup in `lib/core/auth`).
+- Errors are typed `Failure` classes; repositories return
+  `Either<Failure, T>`.
+- Screens observe state through Riverpod providers declared per feature.
+
+> Honest note: several presentation screens currently call datasources or
+> import models directly (program/diet/private-session builders), and many
+> controllers unwrap `Either` by throwing. This is tracked in
+> `docs/internal/` as known tech debt.
 
 ---
 
-## 4. Entry Points & Role Guard
+## 4. Entry points and role guard
 
-There is **no `main.dart`**. Each platform bundle launches one of three files, and
-each file calls the shared `bootstrap()` before starting its router.
+There is **no `main.dart`** — every run/build needs an explicit `--target`:
 
-| File | `AppEntry` | Allowed roles | Target |
-|---|---|---|---|
-| `lib/main_admin.dart` | `admin` | `admin` only | Wide screens / web |
-| `lib/main_reception.dart` | `reception` | `reception` only | Wide screens / web |
-| `lib/main_mobile.dart` | `mobile` | `trainer`, `trainee` | Phones / tablets |
-
-Role enforcement lives in `lib/core/auth/role_guard.dart`:
-
-```dart
-enum AppEntry { admin, reception, mobile }
-
-class RoleGuard {
-  static List<UserRole> allowedRoles(AppEntry entry) {
-    switch (entry) {
-      case AppEntry.admin:     return [UserRole.admin];
-      case AppEntry.reception: return [UserRole.reception];
-      case AppEntry.mobile:    return [UserRole.trainer, UserRole.trainee];
-    }
-  }
-
-  static bool isAllowed(UserRole role, AppEntry entry) =>
-      allowedRoles(entry).contains(role);
-}
-```
-
-A user who signs in with a non-matching role receives
-`RoleGuard.errorMessage(...)` instead of a router redirect.
-
-`bootstrap()` (`lib/core/bootstrap/bootstrap.dart`) is the single initialization
-point shared by all three entry points:
-
-1. `WidgetsFlutterBinding.ensureInitialized()`
-2. Load `.env` (`SUPABASE_URL`, `SUPABASE_ANON_KEY` / `SUPABASE_PUBLISHABLE_KEY`)
-3. `Supabase.initialize(...)`
-4. Initialize local notifications (guarded by `try/catch`)
-5. Install a global `FlutterError.onError` handler
-
----
-
-## 5. Routing
-
-Navigation uses `go_router`, with one `GoRoute` tree per entry point and a shell
-screen that renders a role-specific navigation rail.
-
-### `admin_router.dart`
-
-| Path | Screen |
-|---|---|
-| `/admin/dashboard` | Dashboard |
-| `/admin/users`, `new`, `:id` | User management |
-| `/admin/halls`, `:id/periods` | Halls and access periods |
-| `/admin/sessions`, `new` | Group sessions |
-| `/admin/finance/reports` | Financial reports |
-| `/admin/schedule` | Weekly schedule |
-| `/admin/notifications` | Notifications |
-
-### `reception_router.dart`
-
-| Path | Screen |
-|---|---|
-| `/reception/dashboard` | Dashboard |
-| `/reception/checkin`, `checkin/qr` | Attendance / QR scan |
-| `/reception/memberships` | Memberships |
-| `/reception/bookings/group`, `bookings/private` | Bookings |
-| `/reception/trainer-assignment` | Trainer assignment |
-| `/reception/payments/record` | Payment entry |
-| `/reception/schedule` | Daily schedule |
-| `/reception/trainees/new` | New trainee |
-| `/reception/notifications` | Notifications |
-
-### `mobile_router.dart` (Trainer + Trainee)
-
-| Path | Screen |
-|---|---|
-| `/mobile`, `/mobile/settings`, `/mobile/notifications` | Shell, settings, notifications |
-| `/trainer/dashboard` | Trainer dashboard |
-| `/trainer/trainees`, `/trainer/trainees/:id` | Trainee list and detail |
-| `/trainer/programs/new`, `:id/days`, `days/:dayId/exercises` | Program builder |
-| `/trainer/diets/new`, `:id/days`, `days/:dayId/meals` | Diet builder |
-| `/trainer/attendance`, `/trainer/schedule`, `/trainer/all-schedule` | Attendance and schedule |
-| `/trainee/dashboard`, `/trainee/qr` | Trainee dashboard, personal QR |
-| `/trainee/bookings`, `/trainee/membership`, `/trainee/schedule` | Booking and membership |
-| `/trainee/program`, `/trainee/diet`, `/trainee/trainer` | My program / diet / trainer |
-| `/trainee/attendance`, `/trainee/private-sessions` | History and private sessions |
-
-### Active-section state
-
-Each role has a `*_nav_controller.dart` holding a `StateProvider` over an enum of
-sections, and a resolver that derives the active section from the current
-`location`:
-
-```
-lib/presentation/admin/controllers/admin_nav_controller.dart
-lib/presentation/reception/controllers/reception_nav_controller.dart
-lib/presentation/trainer/controllers/trainer_nav_controller.dart
-lib/presentation/trainee/controllers/trainee_nav_controller.dart
-```
-
-The enums carry display metadata — for example:
-
-```dart
-enum AdminSection {
-  dashboard('لوحة التحكم', 'dashboard', 'لوحة التحكم'),
-  users('المستخدمين', 'users', 'الأعضاء'),
-  halls('القاعات', 'halls', 'القاعات'),
-  sessions('الحصص', 'sessions', 'الحصص'),
-  finance('التقارير المالية', 'finance', 'المالية'),
-  schedule('الجدول الأسبوعي', 'schedule', 'الجدول');
-  // label · routeSegment · shortLabel (shown when the rail collapses)
-}
-```
-
----
-
-## 6. Domain Layer
-
-### Entities (`lib/domain/entities/` — 19)
-
-```
-User  Hall  AccessPeriod  Session  Booking  Attendance  Membership
-TrainingProgram  ProgramDay  ProgramExercise
-Diet  DietDay  DietMeal
-PrivateTrainingSession  PrivateTrainingSchedule
-TrainerTrainee  PaymentCost  Report  NotificationItem
-```
-
-### Use cases (`lib/domain/usecases/` — 18)
-
-| Folder | Use cases |
-|---|---|
-| `auth/` | `LoginUc` · `LogoutUc` · `GetCurrentUserUc` |
-| `membership/` | `CreateMembershipUc` · `RenewMembershipUc` · `CheckMembershipStatusUc` |
-| `session/` | `CreateSessionUc` · `BookSessionUc` · `CancelBookingUc` |
-| `attendance/` | `RecordAttendanceUc` · `GetAttendanceHistoryUc` |
-| `program/` | `CreateTrainingProgramUc` · `GetTraineeProgramsUc` |
-| `diet/` | `CreateDietPlanUc` · `GetTraineeDietsUc` |
-| `payment/` | `RecordPaymentUc` · `GetPaymentsUc` |
-| `report/` | `GenerateReportUc` |
-
-### Repository interfaces (`lib/domain/repositories/`)
-
-One `i_*_repository.dart` per aggregate. `data/repositories_impl/` contains the
-single concrete implementation of each. The notification interface, for example:
-
-```dart
-abstract interface class INotificationRepository {
-  Future<List<AppNotification>> fetchAll();
-  Future<List<AppNotification>> fetchUnread();
-  Future<int> fetchUnreadCount();
-  Future<void> markAsRead(String id);
-  Future<void> markAllAsRead();
-  Future<void> delete(String id);
-}
-```
-
----
-
-## 7. Data Layer
-
-### Datasources (`lib/data/datasources/` — 12)
-
-```
-supabase_auth_datasource          supabase_user_datasource
-supabase_hall_datasource          supabase_session_datasource
-supabase_booking_datasource       supabase_membership_datasource
-supabase_attendance_datasource    supabase_program_datasource
-supabase_diet_datasource          supabase_payment_datasource
-supabase_report_datasource        supabase_notification_datasource
-```
-
-Each datasource is the only place that issues `.from('table')` queries for its
-aggregate and translates rows into `Model` instances.
-
-### Models (`lib/data/models/`)
-
-`*_model.dart` files subclass the corresponding entity and provide
-`fromJson` / `toJson` / `copyWith`. `json_serializable` output (where enabled) is
-generated into `*.g.dart`.
-
-### Central wiring (`lib/data/providers.dart`)
-
-```dart
-final notificationDatasourceProvider =
-    Provider((ref) => SupabaseNotificationDatasource(ref.watch(supabaseClientProvider)));
-
-// Declared against the INTERFACE so tests can override it.
-final notificationRepositoryProvider = Provider<INotificationRepository>(
-    (ref) => NotificationRepositoryImpl(ref.watch(notificationDatasourceProvider)));
-```
-
----
-
-## 8. Presentation Layer
-
-### Modules
-
-| Module | Files | Contents |
+| File | Allowed roles | Target |
 |---|---|---|
-| `admin/` | 16 | `dashboard` · `users` · `halls` · `sessions` · `finance` + `router` + `controllers` |
-| `reception/` | 19 | `dashboard` · `checkin` · `memberships` · `bookings` · `assignment` · `payments` + `router` |
-| `trainer/` | 18 | `dashboard` · `trainees` · `program_builder` · `diet_builder` · `attendance` · `schedule` |
-| `trainee/` | 21 | `dashboard` · `qr_code` · `bookings` · `membership` · `my_program` · `my_diet` · `my_trainer` · `private_sessions` · `attendance` |
-| `shared/` | 28 | `auth/` · `notifications/` · `schedule/` · `settings/` · `widgets/` |
-| `mobile/` | 1 | `mobile_router` shared by trainer and trainee |
+| `lib/main_admin.dart` | `admin` | Wide screens / web |
+| `lib/main_reception.dart` | `reception` | Wide screens / web |
+| `lib/main_mobile.dart` | `trainer`, `trainee` | Phones / tablets |
 
-### State management pattern
+Role is read from the `profiles` table (60-second client cache) and enforced
+by `RoleGuard` at login and by each router's `redirect`. Demo accounts:
+`TODO(author)` — document the accounts you create in your Supabase project.
 
-- `*_controller.dart` next to each screen declares `StateProvider`,
-  `FutureProvider`, or `AsyncNotifier`-style providers.
-- Screens read state with `ref.watch` and mutate through controller functions.
-- Async rendering goes through `AsyncValue.when(...)`, using **`valueOrNull`**
-  rather than `.value` (`.value` throws when `hasValue == false`).
+---
 
-### Shared widgets (`lib/presentation/shared/widgets/` — 20)
+## 5. Tech stack (resolved versions)
 
-```
-app_button            app_card              app_text_field
-app_dropdown           app_date_picker       app_table
-app_toast              async_error_view      loading_indicator
-status_badge           stat_card             section_header
-responsive_layout      adaptive_nav_scaffold notification_bell
-reception_slide_drawer finance_charts        user_search_field
-membership_expired_dialog  athletic_scaffold
-```
+From `pubspec.lock`:
 
-`ResponsiveLayout` and `adaptive_nav_scaffold` handle the phone ↔ tablet ↔
-desktop switch: a navigation rail on wide layouts collapses into a drawer or a
-bottom bar on narrow ones.
-
-### Shared feature folders (`lib/presentation/shared/`)
-
-| Folder | Contents |
+| Concern | Package (resolved) |
 |---|---|
-| `auth/` | `login_screen`, `auth_controller` — sign-in shared by all three entry points |
-| `notifications/` | `notifications_screen`, `notifications_controller` |
-| `schedule/` | `daily_schedule_screen`, `schedule_data_provider`, `period_bottom_sheet` |
-| `settings/` | `settings_screen` |
+| State management | `flutter_riverpod` 2.6.1 |
+| Backend | `supabase_flutter` 2.15.4 |
+| Navigation | `go_router` 14.8.1 |
+| PDF | `pdf` 3.11.3 · `printing` 5.14.3 |
+| QR | `qr_flutter` 4.1.0 · `mobile_scanner` 5.2.3 |
+| Local notifications | `flutter_local_notifications` 19.5.0 · `timezone` 0.10.1 |
+| Charts | `fl_chart` 0.69.2 |
+| Styling | `google_fonts` 6.3.0 (Cairo) · `flutter_svg` 2.1.0 |
+| Functional helpers | `dartz` 0.10.1 · `equatable` 2.1.0 |
+| Env loading | `flutter_dotenv` 5.2.1 |
+| Testing | `flutter_test` · `mocktail` 1.0.5 |
+| Linting | `flutter_lints` 4.0 · `custom_lint` + `riverpod_lint` |
+
+Declared but currently unused in code: `flutter_screenutil`, `http`.
 
 ---
 
-## 9. Core Layer
+## 6. Getting started
 
-| Folder | Files | Responsibility |
-|---|---|---|
-| `auth/` | `role_guard.dart` · `session_role.dart` · `auth_refresh.dart` | Role-based entry gating and token refresh |
-| `bootstrap/` | `bootstrap.dart` | Shared initialization for all entry points |
-| `constants/` | `enums.dart` · `app_colors.dart` · `app_dimensions.dart` · `app_strings.dart` | Domain enums and design tokens |
-| `errors/` | `exceptions.dart` · `failures.dart` · `supabase_error.dart` | Error taxonomy and Supabase error translation |
-| `network/` | `supabase_client.dart` | Supabase client provider |
-| `notifications/` | `local_notifications_service.dart` | Local notification scheduling |
-| `theme/` | `app_theme.dart` · `web_theme.dart` · `mobile_theme.dart` | Three Material 3 themes |
-| `utils/` | `formatters` · `validators` · `extensions` · `day_of_week_helper` · `time_slot_generator` · `permission_helper` · `pdf_report_generator` | Reusable pure helpers |
+**Prerequisites:** Flutter 3.24.x (Dart 3.5.4), a Supabase project.
 
-### Domain enums (`lib/core/constants/enums.dart`)
+1. Copy the env file and fill in your project's public values
+   (**anon/publishable key only — never a `service_role` key**):
 
-```dart
-enum UserRole { admin, reception, trainer, trainee }
-enum Gender { male, female }
-enum MembershipStatus { active, expired, suspended }
-enum SessionStatus { scheduled, cancelled, completed }
-enum BookingStatus { confirmed, cancelled }
-enum PrivateSessionStatus { scheduled, cancelled, completed }
-enum TrainerTraineeStatus { active, inactive }
-enum AttendanceMethod { qr, manual }
-enum AccessType { mixed, women, maintenance, courseReserved }
-enum PaymentType { income, expense }
-enum NotificationType { /* + NotificationTypeX label/color extension */ }
-enum PaymentCategory { /* + PaymentCategoryX extension */ }
-```
+   ```bash
+   cp .env.example .env
+   ```
 
-Display labels, colors, and Arabic strings are attached through companion
-`XxxTypeX` extensions, so screens never switch on raw enum values.
+   ```env
+   SUPABASE_URL=https://YOUR-PROJECT.supabase.co
+   SUPABASE_ANON_KEY=YOUR_ANON_OR_PUBLISHABLE_KEY
+   ```
 
----
+2. Install and (optionally) run code generation:
 
-## 10. Database
+   ```bash
+   flutter pub get
+   dart run build_runner build --delete-conflicting-outputs   # currently: 0 outputs (models are hand-written)
+   ```
 
-### Tables (20)
+3. Run an entry point:
 
-```
-profiles · halls · access_periods · session_periods · sessions · bookings ·
-attendance · memberships · training_programs · program_days · program_exercises ·
-diets · diet_days · diet_meals · private_training_sessions ·
-private_training_schedule · trainer_trainees · payment_costs · reports ·
-notifications
-```
+   ```bash
+   flutter run -t lib/main_admin.dart     -d chrome
+   flutter run -t lib/main_reception.dart -d chrome
+   flutter run -t lib/main_mobile.dart    -d <device-id>
+   ```
 
-
-
-### Security
-
-- Row Level Security on all tables; `profiles.is_staff()` distinguishes staff from
-  trainees.
-- Newer functions use `SECURITY DEFINER SET search_path = public` with explicit
-  `GRANT` / `REVOKE` statements.
-- Private sessions and hall payments have their own scoped policies (see `007`).
+The database schema and server-side logic (triggers, cron, Edge Functions
+`create-user` / `delete-user`) live in the Supabase project and are not part
+of this repository.
 
 ---
 
-## 11. Notifications
-
-Two layers, both free of paid push infrastructure (no FCM, no OneSignal).
-
-### Layer 1 — in-app notifications
-
-- `notifications` table streamed over Supabase **Realtime**.
-- `SupabaseNotificationDatasource` → `NotificationRepositoryImpl` →
-  `INotificationRepository`.
-- `notificationsProvider` and `unreadNotificationsCountProvider` in
-  `notifications_controller.dart`.
-- `NotificationBell` widget (`shared/widgets/notification_bell.dart`) renders a
-  live unread badge and pushes to the notifications route. It is mounted in the
-  admin shell, reception shell, trainee dashboard, and trainer dashboard.
-- `NotificationsScreen` lists items with relative timestamps via
-  `Formatters.timeAgo`.
-
-### Layer 2 — local scheduled notifications
-
-`lib/core/notifications/local_notifications_service.dart`:
-
-```dart
-class LocalNotificationsService {
-  static final instance = LocalNotificationsService._();
-  Future<void> init();
-  Future<void> requestPermission();
-  Future<void> showNow({required String title, String? body, ...});
-  Future<void> scheduleAt(DateTime when, {...});
-  Future<void> cancel(int id);
-  Future<void> cancelAll();
-
-  // pure, unit-testable helpers
-  static TZDateTime toTz(DateTime time);
-  static bool isSchedulable(DateTime when, [DateTime? now]);
-  static int idFor(String key);
-}
-```
-
-Implementation notes:
-
-- Singleton initialized inside `bootstrap()`; every public call is wrapped in
-  `try/catch` so an unsupported platform never takes the app down.
-- Scheduling is deterministic in the device timezone via `timezone`, and survives
-  reboot (boot receivers are registered in the manifest).
-- `isSchedulable` rejects timestamps strictly before `now ?? DateTime.now()`.
-
-**Android configuration** (verified present in the merged manifest after build):
-
-| Item | Value |
-|---|---|
-| Permissions | `POST_NOTIFICATIONS` · `RECEIVE_BOOT_COMPLETED` · `VIBRATE` |
-| Receivers | `ScheduledNotificationReceiver` · `ScheduledNotificationBootReceiver` |
-| Gradle | `coreLibraryDesugaringEnabled true` + `desugar_jdk_libs:2.1.4` · `multiDexEnabled true` |
-
-Core-library desugaring is a hard requirement of `flutter_local_notifications` and
-is configured in `android/app/build.gradle`.
-
----
-
-## 12. Design System
-
-- **Themes** — `core/theme/app_theme.dart` (base Material 3),
-  `web_theme.dart` (wide screens), `mobile_theme.dart` (phones). Dark
-  "athletic" palette defined in `core/constants/app_colors.dart`.
-- **RTL** — the whole app is Arabic; every scaffold is wrapped in the correct
-  `Directionality`, and text alignment/mirroring is handled by Flutter's RTL
-  support.
-- **Responsive** — `flutter_screenutil` for scaled dimensions plus
-  `ResponsiveLayout`, which switches between grid and column arrangements and
-  changes breakpoints per layout class.
-- **Design tokens** — `app_dimensions.dart` (spacing/radius),
-  `app_strings.dart` (copy), `enums` extensions (labels/colors).
-- **Charts** — `fl_chart`, wrapped in `finance_charts` and `stat_card`.
-- **PDF** — `core/utils/pdf_report_generator.dart` builds documents with `pdf`
-  and renders them through `printing`.
-
----
-
-## 13. Code Generation & Analysis
-
-### Generate
+## 7. Commands
 
 ```bash
-dart run build_runner build --delete-conflicting-outputs
-```
-
-Produces `*.g.dart` (JSON) and `*.freezed.dart` (immutable models) for every
-annotated type in `domain/` and `data/`.
-
-### Analyze
-
-```bash
-flutter analyze --no-pub        # static analysis
-dart run custom_lint            # riverpod_lint + custom rules
-```
-
-`analysis_options.yaml` enables `flutter_lints`, `riverpod_lint`, and
-`custom_lint`.
-
-> `flutter analyze` exits non-zero whenever any `info` is reported, even with zero
-> errors — do not chain it with `&&`.
-
----
-
-## 14. Testing
-
-```bash
-flutter test                            # full suite
-flutter test test/core/                 # one folder
-flutter test --reporter expanded        # verbose
-```
-
-**144 tests across 14 files:**
-
-| Area | File | Tests |
-|---|---|---|
-| Local notifications | `test/core/local_notifications_service_test.dart` | 27 |
-| Models | `test/models/private_training_test.dart` · `notification_model_test.dart` · `membership_model_test.dart` | 42 |
-| Repositories | `test/repositories/notification_repository_test.dart` | 15 |
-| Screens | `test/screens/` — notifications, bell, daily schedule, reports, private sessions | 44 |
-| Utilities | `test/utils/schedule_utils_test.dart` | 13 |
-| App-level | `widget_test` · `drawer_hit_test` · `drawer_nav_test` | 3 |
-
-### Testing conventions
-
-- **`mocktail`** for doubles. Because fallback values only cover primitives, any
-  non-primitive argument passed to a mocked method needs an explicit
-  `registerFallbackValue(...)` — required here for `InitializationSettings`,
-  `NotificationDetails`, `TZDateTime`, and `AndroidScheduleMode`.
-- **Repository providers are declared against interfaces**
-  (`Provider<INotificationRepository>`), so tests override them with fakes without
-  losing type safety.
-- **Pure logic is unit-tested directly** — `isSchedulable`, `toTz`, `idFor`,
-  formatters, and time-slot generation have no widget dependency.
-- **Never use `AsyncValue.value`** in code under test; it throws when
-  `hasValue == false`. Use `valueOrNull`.
-
----
-
-## 15. Commands
-
-Because the project has **no `main.dart`**, every run and build command needs an
-explicit `--target`.
-
-```bash
-# ---------------------------------------------------------------
-# Setup
-# ---------------------------------------------------------------
-flutter pub get
-
-# ---------------------------------------------------------------
-# Run
-# ---------------------------------------------------------------
-flutter run -t lib/main_admin.dart     -d chrome
-flutter run -t lib/main_reception.dart -d chrome
-flutter run -t lib/main_mobile.dart    -d <device-id>
-
-# ---------------------------------------------------------------
-# Generate / analyze / test
-# ---------------------------------------------------------------
-dart run build_runner build --delete-conflicting-outputs
 flutter analyze --no-pub
 dart run custom_lint
 flutter test
-
-# ---------------------------------------------------------------
-# Build
-# ---------------------------------------------------------------
-flutter build apk --release --target=lib/main_mobile.dart
-flutter build apk --debug   --target=lib/main_admin.dart
-flutter build web  --release --target=lib/main_admin.dart
-flutter build web  --release --target=lib/main_reception.dart
+flutter build apk   --debug   --target=lib/main_mobile.dart
+flutter build web   --release --target=lib/main_admin.dart
+flutter build web   --release --target=lib/main_reception.dart
 ```
 
-### Environment
+---
 
-Create `.env` in the project root (it is bundled as a Flutter asset and is listed
-in `.gitignore`):
+## 8. Notifications
 
-```env
-SUPABASE_URL=https://YOUR-PROJECT.supabase.co
-SUPABASE_ANON_KEY=YOUR_ANON_OR_PUBLISHABLE_KEY
+Two layers, no paid push infrastructure:
+
+### Layer 1 — in-app (Supabase Realtime)
+
+The `notifications` table is streamed per user (`user_id` filter + RLS).
+`NotificationBell` shows a live unread badge (99+ cap) in the admin shell,
+reception shell, trainer dashboard, and trainee dashboard.
+`NotificationsScreen` supports mark-read, mark-all, swipe-delete, pull-to-refresh,
+and **deep-links** each item to the recipient role's screen via the
+`data.screen` payload (`my_bookings`, `membership`, `my_trainer`, `trainees`,
+`fixed_schedule`).
+
+Notifications are created **only on the server** (triggers + a daily cron for
+`membership_expiring_soon`). The client maps all six server types and never
+crashes on unknown types.
+
+### Layer 2 — local scheduled notifications
+
+`flutter_local_notifications` is initialized (with Android channel,
+`POST_NOTIFICATIONS` runtime permission, inexact scheduling, boot receivers,
+core-library desugaring) and wrapped in `try/catch` for unsupported platforms.
+No client-side scheduling events are wired up yet, and the timezone database
+is initialized without a device-zone lookup (`tz.local` defaults to UTC;
+scheduled instants would still fire correctly via `TZDateTime.from`, but a
+device-timezone package is recommended before enabling scheduling).
+
+### Honest limitation
+
+**There is no push service (no FCM/OneSignal). A user whose app is not
+running receives nothing for server-side events. In-app notifications arrive
+only while the app is open; local reminders (when wired up) fire only if they
+were scheduled earlier on the same device.**
+
+---
+
+## 9. Testing
+
+```bash
+flutter test
 ```
 
-`bootstrap()` also accepts `SUPABASE_PUBLISHABLE_KEY` / `SUPABASE_PUBLISHABLE`.
-If the file or keys are missing the app falls back to an offline/mock mode instead
-of crashing.
+Current state (measured on this repository):
 
-### Build outputs
-
-| Artifact | Path |
+| Metric | Value |
 |---|---|
-| Android APK | `build/app/outputs/flutter-apk/app-*.apk` |
-| Merged manifest (verify permissions/receivers) | `build/app/intermediates/packaged_manifests/<variant>/AndroidManifest.xml` |
-| Web bundle | `build/web/` |
+| Test files | 17 |
+| Test cases | 166 |
+| Passing | 147 |
+| Failing (pre-existing) | 19 — stale widget tests: `private_sessions_screen_test` (15), `daily_schedule_screen_test` (3), `drawer_hit_test` (1) |
+| Hanging | `drawer_nav_test.dart` contains a test that times out (excluded from CI) |
+
+Notification coverage is the strongest area: server-contract type parsing,
+`data` jsonb payloads, deep-link mapping for all six `screen` values × roles,
+unread-count live updates, stream-error resilience, and logout cleanup.
+
+---
+
+## 10. Platform status
+
+| Platform | Status | Evidence |
+|---|---|---|
+| Android (debug APK, mobile target) | **Verified build** | `flutter build apk --debug --target=lib/main_mobile.dart` succeeds; merged manifest contains `POST_NOTIFICATIONS`, boot receivers, desugaring |
+| Web (release, admin target) | **Verified build** | `flutter build web --release --target=lib/main_admin.dart` succeeds |
+| Web (reception/mobile targets) | Scaffolded only | same toolchain, not built in this review |
+| iOS | Scaffolded only | `ios/` present; no Apple toolchain verification |
+| macOS / Windows | Scaffolded only | folders present; no verification |
+| Release APK signing | Unverified | no keystore configured |
+
+---
+
+## 11. Known limitations
+
+- **No push notifications** — see the honest limitation above.
+- Presentation layer bypasses use cases in several features (direct
+  datasource calls in program/diet/private-session screens).
+- Some list queries have no pagination/limits (payments, attendance history).
+- PDF export embeds the Cairo font but does not enable Arabic shaping
+  (`pdf` package flag), so connected-letter rendering in PDFs is imperfect.
+- QR payload is a static `trainee_<uuid>` (no signature/expiry).
+- 19 pre-existing failing widget tests and one hanging test (see Testing).
+- Edge Functions `create-user` / `delete-user` live only in the Supabase
+  project (documentation gap).
+
+See `docs/internal/VERIFICATION_REPORT.en.md` for the full finding list.
+
+---
+
+## 12. Built with AI assistance
+
+This project was built with AI assistance (Claude) under the author's
+direction. The author decided the architecture (Clean Architecture, three
+entry points, Riverpod, Supabase), the feature set per role, the Arabic RTL
+design, and the notification design; the AI generated large portions of the
+implementation, tests, and documentation drafts, and the author reviewed,
+integrated, and refined the result. Personal claims (demo data, deployment
+history, client feedback) are marked `TODO(author)`.
+
+---
+
+## 13. Author and license
+
+**Jawad Azzam** — [LinkedIn](https://www.linkedin.com/in/jawad-azzam-dev/)
+
+Released under the [MIT License](LICENSE).
