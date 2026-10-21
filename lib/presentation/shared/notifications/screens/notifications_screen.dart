@@ -1,17 +1,26 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
 import '../../../../core/constants/app_colors.dart';
 import '../../../../core/constants/enums.dart';
 import '../../../../core/utils/formatters.dart';
 import '../../../../data/providers.dart';
 import '../../../../domain/entities/notification_item.dart';
+import '../../auth/controllers/auth_controller.dart';
 import '../../widgets/app_toast.dart';
 import '../../widgets/async_error_view.dart';
 import '../../widgets/loading_indicator.dart';
 import '../controllers/notifications_controller.dart';
+import '../notification_routes.dart';
 
 /// أيقونة الإشعار حسب نوعه.
 IconData notificationIcon(NotificationType type) => switch (type) {
+      NotificationType.bookingConfirmed => Icons.calendar_month,
+      NotificationType.membershipCreated => Icons.card_membership,
+      NotificationType.trainerAssigned => Icons.fitness_center,
+      NotificationType.traineeAssigned => Icons.person,
+      NotificationType.fixedScheduleCreated => Icons.event_repeat,
+      NotificationType.membershipExpiringSoon => Icons.warning_amber,
       NotificationType.membershipExpiry => Icons.card_membership,
       NotificationType.sessionReminder => Icons.event,
       NotificationType.booking => Icons.calendar_month,
@@ -47,6 +56,14 @@ class _NotificationsScreenState extends ConsumerState<NotificationsScreen> {
       (f) => AppToast.error(context, f.message),
       (_) => _invalidate(),
     );
+  }
+
+  /// فتح الإشعار: تعليم كمقروء ثم الانتقال إلى مسار `data.screen`
+  /// الخاص بدور المستلم (إن وُجد؛ القيم المجهولة تبقى في الشاشة).
+  void _openNotification(AppNotification n) {
+    _markAsRead(n);
+    final route = notificationRouteFor(n, ref.read(currentUserRoleProvider));
+    if (route != null) context.push(route);
   }
 
   Future<void> _markAllAsRead() async {
@@ -143,7 +160,7 @@ class _NotificationsScreenState extends ConsumerState<NotificationsScreen> {
         color: Colors.transparent,
         child: InkWell(
           borderRadius: BorderRadius.circular(20),
-          onTap: () => _markAsRead(n),
+          onTap: () => _openNotification(n),
           onLongPress: () => _confirmDelete(n),
           child: Container(
             padding: const EdgeInsets.all(14),

@@ -1,4 +1,5 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import '../../../../core/notifications/local_notifications_service.dart';
 import '../../../../data/providers.dart';
 import '../../../../domain/entities/user.dart';
 import '../../../../core/auth/role_guard.dart';
@@ -19,6 +20,7 @@ import '../../../trainer/schedule/controllers/schedule_controller.dart';
 import '../../../reception/dashboard/controllers/reception_dashboard_controller.dart';
 import '../../../admin/finance/controllers/finance_controller.dart';
 import '../../../reception/bookings/controllers/bookings_controller.dart';
+import '../../notifications/controllers/notifications_controller.dart';
 
 class AuthController extends AsyncNotifier<User?> {
   @override
@@ -38,11 +40,15 @@ class AuthController extends AsyncNotifier<User?> {
     ref.invalidate(myAttendanceProvider);
     ref.invalidate(traineePrivateSessionsProvider);
     ref.invalidate(myTrainerProvider);
-    ref.invalidate(traineeQrProvider);
+    // traineeQrProvider غير مُدرج هنا عمداً: قيمته مشتقة تفاعلياً من
+    // currentUserIdProvider، وإبطالها من داخل AuthController يسبب
+    // CircularDependencyError (QR يعود trainee_pending تلقائياً عند الخروج).
     ref.invalidate(qrRefreshProvider);
 
     // Trainer-specific providers
-    ref.invalidate(traineesControllerProvider);
+    // traineesControllerProvider غير مُدرج هنا: يراقب authControllerProvider
+    // بنفسه فيُعاد بناؤه تلقائياً عند تغيّر حالة الدخول/الخروج؛ إبطاله من
+    // داخل هذا المزوّد يُسبب CircularDependencyError في وضع التطوير.
     ref.invalidate(traineeDetailProvider);
     ref.invalidate(trainerDashboardProvider);
     ref.invalidate(trainerFixedScheduleProvider);
@@ -63,6 +69,11 @@ class AuthController extends AsyncNotifier<User?> {
     ref.invalidate(weeklyAttendanceProvider);
     ref.invalidate(privateSessionsProvider);
     ref.invalidate(sessionBookingCountsProvider);
+
+    // إشعارات المستخدم السابق: إغلاق بث Realtime فوراً عبر إبطال المزوّد
+    // وإعادة عدّاد الشارة إلى 0 — يمنع بقاء قناة المستخدم القديم مفتوحة.
+    ref.invalidate(notificationsProvider);
+    ref.invalidate(unreadNotificationsCountProvider);
   }
 
   Future<bool> login(String email, String password, {required AppEntry entry}) async {
@@ -118,6 +129,9 @@ class AuthController extends AsyncNotifier<User?> {
     final repo = ref.read(authRepositoryProvider);
     await repo.logout();
     SessionRoleCache.invalidate();
+    // إلغاء أي تنبيهات محلية مجدولة — تجنب بقاء تذكيرات المستخدم القديم
+    // على جهاز مشترك. (الخدمة تبتلع كل الأخطاء داخلياً.)
+    await LocalNotificationsService.instance.cancelAll();
     // تنظيف شامل لكل الحالة المرتبطة بالمستخدم/الدور
     _invalidateAllUserDependentProviders();
     state = const AsyncValue.data(null);
@@ -127,6 +141,6 @@ class AuthController extends AsyncNotifier<User?> {
 final authControllerProvider = AsyncNotifierProvider<AuthController, User?>(AuthController.new);
 
 final currentUserRoleProvider = Provider((ref) {
-  final user = ref.watch(authControllerProvider).value;
+  final user = ref.watch(authControllerProvider).valueOrNull;
   return user?.role;
 });

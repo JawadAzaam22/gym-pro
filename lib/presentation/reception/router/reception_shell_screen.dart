@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
-import 'package:supabase_flutter/supabase_flutter.dart';
 import '../../../core/constants/app_colors.dart';
+import '../../shared/auth/controllers/auth_controller.dart';
 import '../../shared/widgets/adaptive_nav_scaffold.dart';
 import '../../shared/widgets/notification_bell.dart';
 import '../controllers/reception_nav_controller.dart';
@@ -95,7 +95,9 @@ class _ReceptionShellScreenState extends ConsumerState<ReceptionShellScreen> {
         iconColor: AppColors.error,
         onTap: () async {
           try {
-            await Supabase.instance.client.auth.signOut();
+            // عبر AuthController كي تُبطَل كل providers ويثبت إلغاء
+            // اشتراكات Realtime والإشعارات المحلية للخروج من الحساب.
+            await ref.read(authControllerProvider.notifier).logout();
           } catch (_) {}
           if (context.mounted) context.go('/');
         },

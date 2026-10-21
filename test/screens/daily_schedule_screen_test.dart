@@ -5,12 +5,8 @@ import 'package:go_router/go_router.dart';
 import 'package:mocktail/mocktail.dart';
 
 import 'package:gym_pro/presentation/shared/schedule/screens/daily_schedule_screen.dart';
-import 'package:gym_pro/presentation/shared/schedule/schedule_data_provider.dart';
-import 'package:gym_pro/presentation/shared/auth/controllers/auth_controller.dart';
 import 'package:gym_pro/core/constants/enums.dart';
 import 'package:gym_pro/core/auth/role_guard.dart';
-import 'package:gym_pro/core/auth/session_role.dart';
-import 'package:gym_pro/core/auth/auth_refresh.dart';
 import 'package:gym_pro/core/network/supabase_client.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 

@@ -1,4 +1,4 @@
-﻿import 'package:flutter/material.dart';
+import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:go_router/go_router.dart';
@@ -10,8 +10,6 @@ import 'package:gym_pro/presentation/trainee/private_sessions/screens/private_se
 import 'package:gym_pro/core/constants/enums.dart';
 import 'package:gym_pro/core/auth/role_guard.dart';
 import 'package:gym_pro/core/network/supabase_client.dart';
-import 'package:gym_pro/presentation/shared/auth/controllers/auth_controller.dart';
-import 'package:gym_pro/data/providers.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 class _MockSupabaseClient extends Mock implements SupabaseClient {}
@@ -59,15 +57,15 @@ void main() {
       await tester.pumpWidget(createReceptionTestWidget());
       await tester.pumpAndSettle();
 
-      expect(find.text('الجلسات الخاصة'), findsOneWidget);
+      expect(find.text('??????? ??????'), findsOneWidget);
     });
 
     testWidgets('shows two tabs: individual and fixed schedule', (tester) async {
       await tester.pumpWidget(createReceptionTestWidget());
       await tester.pumpAndSettle();
 
-      expect(find.text('الجلسات الفردية'), findsOneWidget);
-      expect(find.text('المواعيد الثابتة'), findsOneWidget);
+      expect(find.text('??????? ???????'), findsOneWidget);
+      expect(find.text('???????? ???????'), findsOneWidget);
     });
 
     testWidgets('shows FAB for scheduling session in individual tab', (tester) async {
@@ -75,14 +73,14 @@ void main() {
       await tester.pumpAndSettle();
 
       expect(find.byType(FloatingActionButton), findsOneWidget);
-      expect(find.text('جدولة جلسة'), findsOneWidget);
+      expect(find.text('????? ????'), findsOneWidget);
     });
 
     testWidgets('hides FAB in fixed schedule tab', (tester) async {
       await tester.pumpWidget(createReceptionTestWidget());
       await tester.pumpAndSettle();
 
-      await tester.tap(find.text('المواعيد الثابتة'));
+      await tester.tap(find.text('???????? ???????'));
       await tester.pumpAndSettle();
 
       expect(find.byType(FloatingActionButton), findsNothing);
@@ -92,18 +90,18 @@ void main() {
       await tester.pumpWidget(createReceptionTestWidget());
       await tester.pumpAndSettle();
 
-      await tester.tap(find.text('المواعيد الثابتة'));
+      await tester.tap(find.text('???????? ???????'));
       await tester.pumpAndSettle();
 
-      expect(find.text('اختر علاقة مدرب-متدرب'), findsOneWidget);
+      expect(find.text('???? ????? ????-?????'), findsOneWidget);
     });
 
     testWidgets('shows empty state when no sessions in individual tab', (tester) async {
       await tester.pumpWidget(createReceptionTestWidget());
       await tester.pumpAndSettle();
 
-      expect(find.text('لا توجد جلسات فردية'), findsOneWidget);
-      expect(find.text('اضغط + في الشريط العلوي للإضافة'), findsOneWidget);
+      expect(find.text('?? ???? ????? ?????'), findsOneWidget);
+      expect(find.text('???? + ?? ?????? ?????? ???????'), findsOneWidget);
     });
   });
 
@@ -143,43 +141,43 @@ void main() {
       await tester.pumpWidget(createTrainerTestWidget());
       await tester.pumpAndSettle();
 
-      expect(find.text('جدولي'), findsOneWidget);
+      expect(find.text('?????'), findsOneWidget);
     });
 
     testWidgets('shows three tabs: group, private, fixed', (tester) async {
       await tester.pumpWidget(createTrainerTestWidget());
       await tester.pumpAndSettle();
 
-      expect(find.text('الحصص الجماعية'), findsOneWidget);
-      expect(find.text('جلساتي الخاصة'), findsOneWidget);
-      expect(find.text('مواعيدي الثابتة'), findsOneWidget);
+      expect(find.text('????? ????????'), findsOneWidget);
+      expect(find.text('?????? ??????'), findsOneWidget);
+      expect(find.text('??????? ???????'), findsOneWidget);
     });
 
     testWidgets('shows empty state when no group sessions', (tester) async {
       await tester.pumpWidget(createTrainerTestWidget());
       await tester.pumpAndSettle();
 
-      expect(find.text('لا توجد حصص جماعية مجدولة'), findsOneWidget);
+      expect(find.text('?? ???? ??? ?????? ??????'), findsOneWidget);
     });
 
     testWidgets('shows empty state when no private sessions', (tester) async {
       await tester.pumpWidget(createTrainerTestWidget());
       await tester.pumpAndSettle();
 
-      await tester.tap(find.text('جلساتي الخاصة'));
+      await tester.tap(find.text('?????? ??????'));
       await tester.pumpAndSettle();
 
-      expect(find.text('لا توجد جلسات خاصة مجدولة'), findsOneWidget);
+      expect(find.text('?? ???? ????? ???? ??????'), findsOneWidget);
     });
 
     testWidgets('shows empty state when no fixed schedule', (tester) async {
       await tester.pumpWidget(createTrainerTestWidget());
       await tester.pumpAndSettle();
 
-      await tester.tap(find.text('مواعيدي الثابتة'));
+      await tester.tap(find.text('??????? ???????'));
       await tester.pumpAndSettle();
 
-      expect(find.text('لا توجد مواعيد ثابتة'), findsOneWidget);
+      expect(find.text('?? ???? ?????? ?????'), findsOneWidget);
     });
   });
 
@@ -219,32 +217,32 @@ void main() {
       await tester.pumpWidget(createTraineeTestWidget());
       await tester.pumpAndSettle();
 
-      expect(find.text('جلساتي الخاصة'), findsOneWidget);
+      expect(find.text('?????? ??????'), findsOneWidget);
     });
 
     testWidgets('shows two tabs: scheduled and fixed', (tester) async {
       await tester.pumpWidget(createTraineeTestWidget());
       await tester.pumpAndSettle();
 
-      expect(find.text('الجلسات المجدولة'), findsOneWidget);
-      expect(find.text('مواعيدي الثابتة'), findsOneWidget);
+      expect(find.text('??????? ????????'), findsOneWidget);
+      expect(find.text('??????? ???????'), findsOneWidget);
     });
 
     testWidgets('shows empty state when no scheduled sessions', (tester) async {
       await tester.pumpWidget(createTraineeTestWidget());
       await tester.pumpAndSettle();
 
-      expect(find.text('لا توجد جلسات خاصة مجدولة'), findsOneWidget);
+      expect(find.text('?? ???? ????? ???? ??????'), findsOneWidget);
     });
 
     testWidgets('shows empty state when no fixed schedule', (tester) async {
       await tester.pumpWidget(createTraineeTestWidget());
       await tester.pumpAndSettle();
 
-      await tester.tap(find.text('مواعيدي الثابتة'));
+      await tester.tap(find.text('??????? ???????'));
       await tester.pumpAndSettle();
 
-      expect(find.text('لا توجد مواعيد ثابتة'), findsOneWidget);
+      expect(find.text('?? ???? ?????? ?????'), findsOneWidget);
     });
   });
 }

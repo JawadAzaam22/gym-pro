@@ -90,7 +90,17 @@ extension AccessTypeX on AccessType {
 }
 
 /// أنواع الإشعارات الداخلية (جدول notifications في Supabase)
+///
+/// [bookingConfirmed] .. [membershipExpiringSoon] هي الأنواع التي يُنشئها
+/// السيرفر (الـ triggers والـ cron) وفق عقد الجدول المُوثّق؛ القيم القديمة
+/// محفوظة للتوافق مع أي صفوف موجودة.
 enum NotificationType {
+  bookingConfirmed,
+  membershipCreated,
+  trainerAssigned,
+  traineeAssigned,
+  fixedScheduleCreated,
+  membershipExpiringSoon,
   membershipExpiry,
   sessionReminder,
   booking,
@@ -102,6 +112,18 @@ enum NotificationType {
 extension NotificationTypeX on NotificationType {
   String get nameAr {
     switch (this) {
+      case NotificationType.bookingConfirmed:
+        return 'حجز';
+      case NotificationType.membershipCreated:
+        return 'عضوية';
+      case NotificationType.trainerAssigned:
+        return 'مدرب';
+      case NotificationType.traineeAssigned:
+        return 'متدرب';
+      case NotificationType.fixedScheduleCreated:
+        return 'جدول ثابت';
+      case NotificationType.membershipExpiringSoon:
+        return 'عضوية';
       case NotificationType.membershipExpiry:
         return 'عضوية';
       case NotificationType.sessionReminder:
@@ -119,6 +141,18 @@ extension NotificationTypeX on NotificationType {
 
   static NotificationType fromString(String? v) {
     switch (v) {
+      case 'booking_confirmed':
+        return NotificationType.bookingConfirmed;
+      case 'membership_created':
+        return NotificationType.membershipCreated;
+      case 'trainer_assigned':
+        return NotificationType.trainerAssigned;
+      case 'trainee_assigned':
+        return NotificationType.traineeAssigned;
+      case 'fixed_schedule_created':
+        return NotificationType.fixedScheduleCreated;
+      case 'membership_expiring_soon':
+        return NotificationType.membershipExpiringSoon;
       case 'membership_expiry':
         return NotificationType.membershipExpiry;
       case 'session_reminder':
@@ -136,6 +170,18 @@ extension NotificationTypeX on NotificationType {
 
   String toDbString() {
     switch (this) {
+      case NotificationType.bookingConfirmed:
+        return 'booking_confirmed';
+      case NotificationType.membershipCreated:
+        return 'membership_created';
+      case NotificationType.trainerAssigned:
+        return 'trainer_assigned';
+      case NotificationType.traineeAssigned:
+        return 'trainee_assigned';
+      case NotificationType.fixedScheduleCreated:
+        return 'fixed_schedule_created';
+      case NotificationType.membershipExpiringSoon:
+        return 'membership_expiring_soon';
       case NotificationType.membershipExpiry:
         return 'membership_expiry';
       case NotificationType.sessionReminder:

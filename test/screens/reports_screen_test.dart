@@ -5,11 +5,9 @@ import 'package:go_router/go_router.dart';
 import 'package:mocktail/mocktail.dart';
 
 import 'package:gym_pro/presentation/admin/finance/screens/reports_screen.dart';
-import 'package:gym_pro/presentation/admin/finance/controllers/finance_controller.dart';
 import 'package:gym_pro/core/constants/enums.dart';
 import 'package:gym_pro/core/auth/role_guard.dart';
 import 'package:gym_pro/core/network/supabase_client.dart';
-import 'package:gym_pro/data/providers.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 class _MockSupabaseClient extends Mock implements SupabaseClient {}
