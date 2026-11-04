@@ -55,6 +55,9 @@ app.*.map.json
 supabase/.temp/
 supabase/.branches/
 
+# Personal review notes and private project configuration
+privateConfig/
+
 # ---------------------------------------------------------------------------
 # Signing / release artifacts
 # ---------------------------------------------------------------------------

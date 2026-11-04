@@ -9,7 +9,7 @@ import '../../../../domain/entities/user.dart';
 class UsersController extends AsyncNotifier<List<User>> {
   @override
   Future<List<User>> build() async {
-    final repo = ref.read(userRepositoryProvider);
+    final repo = ref.read(userUseCasesProvider);
     // ملاحظة: نجلب هنا كل المستخدمين بمن فيهم الموقوفين (is_active = false)
     // لأن هذه الشاشة هي شاشة إدارة الأعضاء الخاصة بالأدمن. لو استخدمنا
     // getAllUsers() (النشطين فقط) فإن أي عضو يتم "إيقافه/حظره" سيختفي من
@@ -20,14 +20,14 @@ class UsersController extends AsyncNotifier<List<User>> {
 
   /// يجلب جميع المستخدمين بما فيهم غير النشطين (للأدمن فقط)
   Future<List<User>> getAllUsersIncludingInactive() async {
-    final repo = ref.read(userRepositoryProvider);
+    final repo = ref.read(userUseCasesProvider);
     final res = await repo.getAllUsersIncludingInactive();
     return res.fold((l) => throw Exception(l.message), (r) => r);
   }
 
   /// إنشاء مستخدم جديد - يضيف للـ List الحالية
   Future<bool> createUser(User user, String password) async {
-    final repo = ref.read(userRepositoryProvider);
+    final repo = ref.read(userUseCasesProvider);
     final res = await repo.createUser(user, password);
     return res.fold(
       (l) {
@@ -47,7 +47,7 @@ class UsersController extends AsyncNotifier<List<User>> {
   /// ملاحظة: بعد Update على profiles.role يحتاج المستخدم المعني
   /// استدعاء refreshSession() (أو خروج/دخول) ليأخذ الـ JWT الجديد مفعوله.
   Future<bool> updateUser(User user) async {
-    final repo = ref.read(userRepositoryProvider);
+    final repo = ref.read(userUseCasesProvider);
     final res = await repo.updateUser(user);
     return res.fold(
       (l) {
@@ -70,7 +70,7 @@ class UsersController extends AsyncNotifier<List<User>> {
   }
 
   Future<bool> setActive(String id, bool isActive) async {
-    final repo = ref.read(userRepositoryProvider);
+    final repo = ref.read(userUseCasesProvider);
     final user = (state.value ?? []).where((item) => item.id == id).firstOrNull;
     if (user == null) return false;
     final res = await repo.updateUser(User(
@@ -112,7 +112,7 @@ class UsersController extends AsyncNotifier<List<User>> {
   Future<void> refresh() async {
     state = const AsyncValue.loading();
     state = await AsyncValue.guard(() async {
-      final repo = ref.read(userRepositoryProvider);
+      final repo = ref.read(userUseCasesProvider);
       // نفس ملاحظة build(): نجلب الجميع بمن فيهم الموقوفين حتى يبقوا ظاهرين
       // في شاشة إدارة الأعضاء بعد الإيقاف/الحظر.
       final res = await repo.getAllUsersIncludingInactive();
@@ -126,7 +126,7 @@ class UsersController extends AsyncNotifier<List<User>> {
   /// المستخدم الشخصية ويُفرغ إسناده في السجلات المشتركة (تقارير/حصص/مدفوعات
   /// تخص أشخاصًا آخرين) بدل حذفها، حفاظًا على تاريخ التقارير لبقية المستخدمين.
   Future<bool> deleteUser(String id, {bool cascade = false}) async {
-    final repo = ref.read(userRepositoryProvider);
+    final repo = ref.read(userUseCasesProvider);
     final res = await repo.deleteUser(id, cascade: cascade);
     return res.fold(
       (l) {
@@ -135,7 +135,8 @@ class UsersController extends AsyncNotifier<List<User>> {
       },
       (_) {
         // إزالة المستخدم من القائمة المحلية
-        final List<User> list = (state.value ?? <User>[]).where((u) => u.id != id).toList();
+        final List<User> list =
+            (state.value ?? <User>[]).where((u) => u.id != id).toList();
         state = AsyncValue.data(list);
         return true;
       },
@@ -166,7 +167,7 @@ final userDetailProvider =
   try {
     return users.firstWhere((u) => u.id == id);
   } catch (_) {
-    final res = await ref.read(userRepositoryProvider).getUserById(id);
+    final res = await ref.read(userUseCasesProvider).getUserById(id);
     return res.fold((l) => throw Exception(l.message), (r) => r);
   }
 });

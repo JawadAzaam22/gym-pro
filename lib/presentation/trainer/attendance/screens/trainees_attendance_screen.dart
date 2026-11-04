@@ -13,8 +13,10 @@ final traineesAttendanceProvider = FutureProvider((ref) async {
   // ملاحظة: getTrainerTrainees بلا وسائط تجلب جميع العلاقات، لذا نُمرر
   // trainerId صراحة لنحصل فقط على متدربي هذا المدرب تحديدًا.
   if (trainerId.isEmpty) return <TraineeAttendanceData>[];
-  final traineesRes =
-      await ref.read(bookingDatasourceProvider).getTrainerTrainees(trainerId: trainerId);
+  final result = await ref.read(getTrainerTraineesProvider).call(
+        trainerId: trainerId,
+      );
+  final traineesRes = result.fold((l) => throw Exception(l.message), (r) => r);
   final traineeIds = traineesRes.map((t) => t.traineeId).toList();
   if (traineeIds.isEmpty) return <TraineeAttendanceData>[];
 
@@ -27,9 +29,8 @@ final traineesAttendanceProvider = FutureProvider((ref) async {
   // في وضع الإصدار (release) إلى "شاشة رمادية" بلا رسالة خطأ واضحة.
   final results = <String, List<Attendance>>{};
   final since = DateTime.now().subtract(const Duration(days: 90));
-  final attRes = await ref
-      .read(attendanceRepositoryProvider)
-      .getAllAttendance(from: since);
+  final attRes =
+      await ref.read(attendanceUseCasesProvider).getAllAttendance(from: since);
   attRes.fold((l) => null, (all) {
     for (final a in all) {
       if (traineeIds.contains(a.traineeId)) {
@@ -38,7 +39,7 @@ final traineesAttendanceProvider = FutureProvider((ref) async {
     }
   });
 
-  final usersRes = await ref.read(userRepositoryProvider).getAllUsers();
+  final usersRes = await ref.read(userUseCasesProvider).getAllUsers();
   final names = <String, String>{};
   usersRes.fold((l) => null, (users) {
     for (final u in users) {
@@ -76,10 +77,16 @@ class TraineesAttendanceScreen extends ConsumerWidget {
       backgroundColor: AppColors.background,
       appBar: AppBar(title: const Text('حضور متدربي')),
       body: dataAsync.when(
-        loading: () => const LoadingIndicator(message: 'جاري تحميل بيانات الحضور...'),
-        error: (e, _) => AsyncErrorView(error: e, onRetry: () => ref.invalidate(traineesAttendanceProvider)),
+        loading: () =>
+            const LoadingIndicator(message: 'جاري تحميل بيانات الحضور...'),
+        error: (e, _) => AsyncErrorView(
+            error: e,
+            onRetry: () => ref.invalidate(traineesAttendanceProvider)),
         data: (list) {
-          if (list.isEmpty) return const Center(child: Text('لا يوجد متدربون مسجلون بعد', style: TextStyle(color: AppColors.textMuted)));
+          if (list.isEmpty)
+            return const Center(
+                child: Text('لا يوجد متدربون مسجلون بعد',
+                    style: TextStyle(color: AppColors.textMuted)));
           return RefreshIndicator(
             onRefresh: () async => ref.invalidate(traineesAttendanceProvider),
             child: ListView.separated(
@@ -97,15 +104,32 @@ class TraineesAttendanceScreen extends ConsumerWidget {
                         children: [
                           CircleAvatar(
                             radius: 18,
-                            backgroundColor: AppColors.primary.withOpacity(0.12),
-                            child: Text(d.traineeName.isNotEmpty ? d.traineeName[0] : '?', style: const TextStyle(color: AppColors.primary, fontWeight: FontWeight.w700)),
+                            backgroundColor:
+                                AppColors.primary.withOpacity(0.12),
+                            child: Text(
+                                d.traineeName.isNotEmpty
+                                    ? d.traineeName[0]
+                                    : '?',
+                                style: const TextStyle(
+                                    color: AppColors.primary,
+                                    fontWeight: FontWeight.w700)),
                           ),
                           const SizedBox(width: 12),
-                          Expanded(child: Text(d.traineeName, style: const TextStyle(color: AppColors.textPrimary, fontWeight: FontWeight.w700, fontSize: 14))),
+                          Expanded(
+                              child: Text(d.traineeName,
+                                  style: const TextStyle(
+                                      color: AppColors.textPrimary,
+                                      fontWeight: FontWeight.w700,
+                                      fontSize: 14))),
                           Container(
-                            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                            decoration: BoxDecoration(color: AppColors.surfaceLow, borderRadius: BorderRadius.circular(8)),
-                            child: Text('${records.length} حضور', style: const TextStyle(color: AppColors.textMuted, fontSize: 11)),
+                            padding: const EdgeInsets.symmetric(
+                                horizontal: 8, vertical: 4),
+                            decoration: BoxDecoration(
+                                color: AppColors.surfaceLow,
+                                borderRadius: BorderRadius.circular(8)),
+                            child: Text('${records.length} حضور',
+                                style: const TextStyle(
+                                    color: AppColors.textMuted, fontSize: 11)),
                           ),
                         ],
                       ),
@@ -115,25 +139,40 @@ class TraineesAttendanceScreen extends ConsumerWidget {
                         const SizedBox(height: 8),
                         ...records.take(5).map((a) {
                           final date = a.checkInTime;
-                          final dateStr = '${date.year}-${date.month.toString().padLeft(2, '0')}-${date.day.toString().padLeft(2, '0')}';
-                          final timeStr = '${date.hour.toString().padLeft(2, '0')}:${date.minute.toString().padLeft(2, '0')}';
+                          final dateStr =
+                              '${date.year}-${date.month.toString().padLeft(2, '0')}-${date.day.toString().padLeft(2, '0')}';
+                          final timeStr =
+                              '${date.hour.toString().padLeft(2, '0')}:${date.minute.toString().padLeft(2, '0')}';
                           return Padding(
                             padding: const EdgeInsets.only(bottom: 6),
                             child: Row(
                               children: [
-                                const Icon(Icons.check_circle, size: 14, color: AppColors.success),
+                                const Icon(Icons.check_circle,
+                                    size: 14, color: AppColors.success),
                                 const SizedBox(width: 8),
-                                Text(dateStr, style: const TextStyle(color: AppColors.textPrimary, fontSize: 12)),
+                                Text(dateStr,
+                                    style: const TextStyle(
+                                        color: AppColors.textPrimary,
+                                        fontSize: 12)),
                                 const SizedBox(width: 8),
-                                Text(timeStr, style: const TextStyle(color: AppColors.textMuted, fontSize: 11)),
+                                Text(timeStr,
+                                    style: const TextStyle(
+                                        color: AppColors.textMuted,
+                                        fontSize: 11)),
                                 const Spacer(),
-                                Text(a.method.name == 'qr' ? 'QR' : 'يدوي', style: const TextStyle(color: AppColors.primary, fontSize: 10, fontWeight: FontWeight.w600)),
+                                Text(a.method.name == 'qr' ? 'QR' : 'يدوي',
+                                    style: const TextStyle(
+                                        color: AppColors.primary,
+                                        fontSize: 10,
+                                        fontWeight: FontWeight.w600)),
                               ],
                             ),
                           );
                         }),
                         if (records.length > 5)
-                          Text('و ${records.length - 5} سجل آخر...', style: const TextStyle(color: AppColors.textMuted, fontSize: 11)),
+                          Text('و ${records.length - 5} سجل آخر...',
+                              style: const TextStyle(
+                                  color: AppColors.textMuted, fontSize: 11)),
                       ],
                     ],
                   ),

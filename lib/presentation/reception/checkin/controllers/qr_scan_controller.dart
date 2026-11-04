@@ -10,10 +10,15 @@ class QrScanState {
 class QrScanController extends StateNotifier<QrScanState> {
   QrScanController() : super(const QrScanState());
 
-  void setProcessing(String code) => state = QrScanState(lastCode: code, isProcessing: true);
-  void setDone() => state = QrScanState(lastCode: state.lastCode, isProcessing: false);
-  void setError(String e) => state = QrScanState(lastCode: state.lastCode, error: e);
+  void setProcessing(String code) =>
+      state = QrScanState(lastCode: code, isProcessing: true);
+  void setDone() =>
+      state = QrScanState(lastCode: state.lastCode, isProcessing: false);
+  void setError(String e) =>
+      state = QrScanState(lastCode: state.lastCode, error: e);
   void reset() => state = const QrScanState();
 }
 
-final qrScanControllerProvider = StateNotifierProvider<QrScanController, QrScanState>((ref) => QrScanController());
+final qrScanControllerProvider =
+    StateNotifierProvider<QrScanController, QrScanState>(
+        (ref) => QrScanController());

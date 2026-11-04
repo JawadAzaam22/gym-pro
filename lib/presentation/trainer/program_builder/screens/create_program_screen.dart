@@ -76,14 +76,11 @@ class _CreateProgramScreenState extends ConsumerState<CreateProgramScreen> {
                   users: trainees,
                   labelText: 'المتدرب',
                   prefixIcon: Icons.person,
-                  selectedId: _trainee.text.isNotEmpty
-                      ? _trainee.text
-                      : null,
+                  selectedId: _trainee.text.isNotEmpty ? _trainee.text : null,
                   enabled: !hasPreselectedTrainee,
                   onSelected: (user) =>
                       setState(() => _trainee.text = user?.id ?? ''),
-                  validator: (user) =>
-                      user == null ? 'اختر المتدرب' : null,
+                  validator: (user) => user == null ? 'اختر المتدرب' : null,
                 );
               },
             ),

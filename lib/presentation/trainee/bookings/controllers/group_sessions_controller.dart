@@ -25,28 +25,29 @@ class GroupSessionDisplay {
 
 final groupSessionsDisplayProvider =
     FutureProvider<List<GroupSessionDisplay>>((ref) async {
-  final sessionsRes = await ref.read(sessionRepositoryProvider).getSessions();
-  final allSessions = sessionsRes.fold((l) => throw Exception(l.message), (r) => r);
+  final sessionsRes = await ref.read(sessionUseCasesProvider).getSessions();
+  final allSessions =
+      sessionsRes.fold((l) => throw Exception(l.message), (r) => r);
   // لا تهم المتدرب الحصص الملغاة.
   final sessions =
       allSessions.where((s) => s.status != SessionStatus.cancelled).toList();
   if (sessions.isEmpty) return [];
 
-  final usersRes = await ref.read(userRepositoryProvider).getAllUsers();
+  final usersRes = await ref.read(userUseCasesProvider).getAllUsers();
   final userNames = {
     for (final u in usersRes.getOrElse(() => [])) u.id: u.name,
   };
 
-  final hallsRes = await ref.read(hallRepositoryProvider).getHalls();
+  final hallsRes = await ref.read(hallUseCasesProvider).getHalls();
   final hallNames = {
     for (final h in hallsRes.getOrElse(() => [])) h.id: h.name,
   };
 
   final sessionPeriodsRes =
-      await ref.read(sessionRepositoryProvider).getAllSessionPeriods();
+      await ref.read(sessionUseCasesProvider).getAllSessionPeriods();
   final sessionPeriods = sessionPeriodsRes.getOrElse(() => {});
 
-  final periodsRes = await ref.read(hallRepositoryProvider).getAllAccessPeriods();
+  final periodsRes = await ref.read(hallUseCasesProvider).getAllAccessPeriods();
   final periodsById = <int, AccessPeriod>{
     for (final p in periodsRes.getOrElse(() => <AccessPeriod>[])) p.id: p,
   };

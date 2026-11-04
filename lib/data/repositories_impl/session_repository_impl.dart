@@ -35,7 +35,8 @@ class SessionRepositoryImpl implements ISessionRepository {
   }
 
   @override
-  Future<Either<Failure, List<Session>>> getSessionsByTrainer(String trainerId) async {
+  Future<Either<Failure, List<Session>>> getSessionsByTrainer(
+      String trainerId) async {
     try {
       final list = await datasource.getSessionsByTrainer(trainerId);
       return Right(list.map((e) => e.toEntity()).toList());
@@ -109,7 +110,8 @@ class SessionRepositoryImpl implements ISessionRepository {
   }
 
   @override
-  Future<Either<Failure, void>> createSessionPeriods(int sessionId, List<int> accessPeriodIds) async {
+  Future<Either<Failure, void>> createSessionPeriods(
+      int sessionId, List<int> accessPeriodIds) async {
     try {
       await datasource.createSessionPeriods(sessionId, accessPeriodIds);
       return const Right(null);

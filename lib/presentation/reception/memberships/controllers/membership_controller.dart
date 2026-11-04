@@ -11,13 +11,6 @@ class MembershipController extends AsyncNotifier<List<Membership>> {
 
   Future<bool> create(
       String traineeId, DateTime start, DateTime end, String recordedBy) async {
-    if (!end.isAfter(start)) {
-      state = AsyncValue.error(
-        'تاريخ الانتهاء يجب أن يكون بعد تاريخ البداية',
-        StackTrace.current,
-      );
-      return false;
-    }
     state = const AsyncValue.loading();
     final m = Membership(
         id: 0,
@@ -27,8 +20,7 @@ class MembershipController extends AsyncNotifier<List<Membership>> {
         status: MembershipStatus.active,
         recordedBy: recordedBy,
         createdAt: DateTime.now());
-    final res =
-        await ref.read(membershipRepositoryProvider).createMembership(m);
+    final res = await ref.read(createMembershipProvider).call(m);
     return res.fold((l) {
       state = AsyncValue.error(l.message, StackTrace.current);
       return false;
@@ -41,9 +33,11 @@ class MembershipController extends AsyncNotifier<List<Membership>> {
   Future<Either<Failure, Membership>> renew(
       String traineeId, DateTime newEnd, String recordedBy) async {
     state = const AsyncValue.loading();
-    final res = await ref
-        .read(membershipRepositoryProvider)
-        .renewMembership(traineeId, newEnd, recordedBy);
+    final res = await ref.read(renewMembershipProvider).call(
+          traineeId: traineeId,
+          newEndDate: newEnd,
+          recordedBy: recordedBy,
+        );
     res.fold(
       (l) => state = AsyncValue.error(l.message, StackTrace.current),
       (membership) => state = AsyncValue.data([membership]),
@@ -52,14 +46,15 @@ class MembershipController extends AsyncNotifier<List<Membership>> {
   }
 
   Future<bool> delete(int id) async {
-    final res = await ref.read(membershipRepositoryProvider).deleteMembership(id);
+    final res = await ref.read(deleteMembershipProvider).call(id);
     return res.fold(
       (l) {
         state = AsyncValue.error(l.message, StackTrace.current);
         return false;
       },
       (_) {
-        state = AsyncValue.data((state.value ?? []).where((e) => e.id != id).toList());
+        state = AsyncValue.data(
+            (state.value ?? []).where((e) => e.id != id).toList());
         return true;
       },
     );
@@ -72,6 +67,6 @@ final membershipControllerProvider =
 
 /// جميع العضويات (للاستقبال/الأدمن) — تُعاد قراءتها عبر invalidate بعد الحذف.
 final allMembershipsProvider = FutureProvider<List<Membership>>((ref) async {
-  final res = await ref.read(membershipRepositoryProvider).getAllMemberships();
+  final res = await ref.read(membershipUseCasesProvider).getAllMemberships();
   return res.fold((l) => throw Exception(l.message), (r) => r);
 });

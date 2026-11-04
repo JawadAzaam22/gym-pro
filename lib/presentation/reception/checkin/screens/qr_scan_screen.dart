@@ -7,7 +7,6 @@ import '../../../shared/widgets/app_card.dart';
 import '../../../shared/widgets/membership_expired_dialog.dart';
 import '../../../../core/errors/failures.dart';
 import '../controllers/checkin_controller.dart';
-import '../../../../data/providers.dart';
 import '../../../shared/widgets/app_toast.dart';
 
 class QrScanScreen extends ConsumerStatefulWidget {
@@ -60,33 +59,23 @@ class _QrScanScreenState extends ConsumerState<QrScanScreen> {
                     _processing = true;
                   });
                   final raw = code.trim();
-                  final traineeId = raw.startsWith('trainee_')
-                      ? raw.substring('trainee_'.length)
-                      : raw;
                   try {
-                    final userRes = await ref
-                        .read(userRepositoryProvider)
-                        .getUserById(traineeId);
-                    final traineeName =
-                        userRes.fold((_) => 'المتدرب', (user) => user.name);
                     final res = await ref
                         .read(checkinControllerProvider.notifier)
-                        .checkin(traineeId, 'qr');
+                        .checkinByQr(raw);
                     if (!context.mounted) return;
-                    Failure? failure;
-                    res.fold((f) {
-                      failure = f;
-                    }, (_) {});
-                    if (!context.mounted) return;
-                    final f = failure;
-                    if (f is MembershipExpiredFailure) {
-                      showMembershipExpiredDialog(context,
-                          endDate: f.endDate, traineeLabel: traineeName);
-                    } else if (f != null) {
-                      AppToast.error(context, 'فشل: ${f.message}');
-                    } else {
-                      AppToast.success(context, 'تم تسجيل حضور $traineeName');
-                    }
+                    res.fold(
+                      (f) {
+                        if (f is MembershipExpiredFailure) {
+                          showMembershipExpiredDialog(context,
+                              endDate: f.endDate);
+                        } else {
+                          AppToast.error(context, 'فشل: ${f.message}');
+                        }
+                      },
+                      (r) => AppToast.success(
+                          context, 'تم تسجيل حضور ${r.traineeName}'),
+                    );
                   } catch (e) {
                     if (context.mounted) {
                       AppToast.error(context, 'فشل: $e');

@@ -9,14 +9,23 @@ class DietBuilderController extends AsyncNotifier<List<Diet>> {
   @override
   Future<List<Diet>> build() async {
     final trainerId = ref.read(authControllerProvider).value?.id ?? '';
-    final res = await ref.read(dietRepositoryProvider).getDietsByTrainer(trainerId);
+    final res =
+        await ref.read(dietUseCasesProvider).getDietsByTrainer(trainerId);
     return res.fold((l) => throw Exception(l.message), (r) => r);
   }
 
   Future<bool> create(String name, String traineeId, String? desc) async {
     final trainerId = ref.read(authControllerProvider).value?.id ?? '';
-    final d = Diet(id: 0, trainerId: trainerId, traineeId: traineeId, name: name, description: desc, startDate: DateTime.now(), isActive: true, createdAt: DateTime.now());
-    final res = await ref.read(dietRepositoryProvider).createDiet(d);
+    final d = Diet(
+        id: 0,
+        trainerId: trainerId,
+        traineeId: traineeId,
+        name: name,
+        description: desc,
+        startDate: DateTime.now(),
+        isActive: true,
+        createdAt: DateTime.now());
+    final res = await ref.read(createDietPlanUcProvider).call(d);
     return res.fold((l) {
       state = AsyncValue.error(l.message, StackTrace.current);
       return false;
@@ -27,7 +36,7 @@ class DietBuilderController extends AsyncNotifier<List<Diet>> {
   }
 
   Future<bool> editDiet(Diet diet) async {
-    final res = await ref.read(dietRepositoryProvider).updateDiet(diet);
+    final res = await ref.read(dietUseCasesProvider).updateDiet(diet);
     return res.fold((l) {
       state = AsyncValue.error(l.message, StackTrace.current);
       return false;
@@ -39,38 +48,51 @@ class DietBuilderController extends AsyncNotifier<List<Diet>> {
   }
 
   Future<bool> deactivate(int id) async {
-    final res = await ref.read(dietRepositoryProvider).deactivateDiet(id);
+    final res = await ref.read(dietUseCasesProvider).deactivateDiet(id);
     return res.fold((l) => false, (_) {
       final list = state.value ?? [];
-      state = AsyncValue.data([for (final d in list) d.id == id ? d.copyWith(isActive: false) : d]);
+      state = AsyncValue.data(
+          [for (final d in list) d.id == id ? d.copyWith(isActive: false) : d]);
       return true;
     });
   }
 
   Future<bool> delete(int id) async {
-    final res = await ref.read(dietRepositoryProvider).deleteDiet(id);
+    final res = await ref.read(dietUseCasesProvider).deleteDiet(id);
     return res.fold(
       (l) {
         state = AsyncValue.error(l.message, StackTrace.current);
         return false;
       },
       (_) {
-        state = AsyncValue.data((state.value ?? []).where((e) => e.id != id).toList());
+        state = AsyncValue.data(
+            (state.value ?? []).where((e) => e.id != id).toList());
         return true;
       },
     );
   }
 }
 
-final dietBuilderProvider = AsyncNotifierProvider<DietBuilderController, List<Diet>>(DietBuilderController.new);
+final dietBuilderProvider =
+    AsyncNotifierProvider<DietBuilderController, List<Diet>>(
+        DietBuilderController.new);
 
 /// أيام خطة غذائية معيّنة — invalidation بعد الإضافة يعيد الجلب تلقائيًا.
-final dietDaysProvider = FutureProvider.family<List<DietDayModel>, int>((ref, dietId) async {
-  return ref.read(dietDatasourceProvider).getDays(dietId);
+final dietDaysProvider =
+    FutureProvider.family<List<DietDayModel>, int>((ref, dietId) async {
+  final result = await ref.read(dietContentUseCasesProvider).getDays(dietId);
+  return result.fold(
+    (failure) => throw Exception(failure.message),
+    (days) => days.map(DietDayModel.fromEntity).toList(),
+  );
 });
 
 /// وجبات يوم معيّن في خطة غذائية.
-final dietMealsProvider = FutureProvider.family<List<DietMealModel>, int>((ref, dayId) async {
-  return ref.read(dietDatasourceProvider).getMeals(dayId);
+final dietMealsProvider =
+    FutureProvider.family<List<DietMealModel>, int>((ref, dayId) async {
+  final result = await ref.read(dietContentUseCasesProvider).getMeals(dayId);
+  return result.fold(
+    (failure) => throw Exception(failure.message),
+    (meals) => meals.map(DietMealModel.fromEntity).toList(),
+  );
 });
-

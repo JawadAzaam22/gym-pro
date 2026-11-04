@@ -9,7 +9,8 @@ import '../../../shared/auth/controllers/auth_controller.dart';
 
 final myAttendanceProvider = FutureProvider((ref) async {
   final userId = ref.read(authControllerProvider).value?.id ?? '';
-  final res = await ref.read(attendanceRepositoryProvider).getAttendanceByTrainee(userId);
+  final res =
+      await ref.read(attendanceUseCasesProvider).getAttendanceByTrainee(userId);
   return res.fold((l) => throw Exception(l.message), (r) => r);
 });
 
@@ -24,10 +25,15 @@ class MyAttendanceScreen extends ConsumerWidget {
       backgroundColor: AppColors.background,
       appBar: AppBar(title: const Text('سجل حضوري')),
       body: attendanceAsync.when(
-        loading: () => const LoadingIndicator(message: 'جاري تحميل سجل الحضور...'),
-        error: (e, _) => AsyncErrorView(error: e, onRetry: () => ref.invalidate(myAttendanceProvider)),
+        loading: () =>
+            const LoadingIndicator(message: 'جاري تحميل سجل الحضور...'),
+        error: (e, _) => AsyncErrorView(
+            error: e, onRetry: () => ref.invalidate(myAttendanceProvider)),
         data: (list) {
-          if (list.isEmpty) return const Center(child: Text('لا يوجد سجل حضور بعد', style: TextStyle(color: AppColors.textMuted)));
+          if (list.isEmpty)
+            return const Center(
+                child: Text('لا يوجد سجل حضور بعد',
+                    style: TextStyle(color: AppColors.textMuted)));
           return RefreshIndicator(
             onRefresh: () async => ref.invalidate(myAttendanceProvider),
             child: ListView.separated(
@@ -37,8 +43,10 @@ class MyAttendanceScreen extends ConsumerWidget {
               itemBuilder: (_, i) {
                 final a = list[i];
                 final date = a.checkInTime;
-                final dateStr = '${date.year}-${date.month.toString().padLeft(2, '0')}-${date.day.toString().padLeft(2, '0')}';
-                final timeStr = '${date.hour.toString().padLeft(2, '0')}:${date.minute.toString().padLeft(2, '0')}';
+                final dateStr =
+                    '${date.year}-${date.month.toString().padLeft(2, '0')}-${date.day.toString().padLeft(2, '0')}';
+                final timeStr =
+                    '${date.hour.toString().padLeft(2, '0')}:${date.minute.toString().padLeft(2, '0')}';
                 return AppCard(
                   padding: const EdgeInsets.all(12),
                   child: Row(
@@ -50,27 +58,38 @@ class MyAttendanceScreen extends ConsumerWidget {
                           color: AppColors.success.withOpacity(0.12),
                           borderRadius: BorderRadius.circular(10),
                         ),
-                        child: const Icon(Icons.check_circle, color: AppColors.success, size: 20),
+                        child: const Icon(Icons.check_circle,
+                            color: AppColors.success, size: 20),
                       ),
                       const SizedBox(width: 12),
                       Expanded(
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
-                            Text(dateStr, style: const TextStyle(color: AppColors.textPrimary, fontWeight: FontWeight.w600, fontSize: 13)),
-                            Text(timeStr, style: const TextStyle(color: AppColors.textMuted, fontSize: 11)),
+                            Text(dateStr,
+                                style: const TextStyle(
+                                    color: AppColors.textPrimary,
+                                    fontWeight: FontWeight.w600,
+                                    fontSize: 13)),
+                            Text(timeStr,
+                                style: const TextStyle(
+                                    color: AppColors.textMuted, fontSize: 11)),
                           ],
                         ),
                       ),
                       Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                        padding: const EdgeInsets.symmetric(
+                            horizontal: 8, vertical: 4),
                         decoration: BoxDecoration(
                           color: AppColors.surfaceLow,
                           borderRadius: BorderRadius.circular(8),
                         ),
                         child: Text(
                           a.method.name == 'qr' ? 'QR' : 'يدوي',
-                          style: const TextStyle(color: AppColors.primary, fontSize: 11, fontWeight: FontWeight.w600),
+                          style: const TextStyle(
+                              color: AppColors.primary,
+                              fontSize: 11,
+                              fontWeight: FontWeight.w600),
                         ),
                       ),
                     ],

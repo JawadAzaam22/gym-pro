@@ -19,8 +19,7 @@ class TrainerDashboardScreen extends ConsumerWidget {
 
     return Scaffold(
       backgroundColor: AppColors.background,
-      appBar:
-          AppBar(title: const Text('لوحة المدرب'), actions: const [
+      appBar: AppBar(title: const Text('لوحة المدرب'), actions: const [
         NotificationBell(route: '/mobile/notifications'),
         Padding(
             padding: EdgeInsets.only(left: 12),

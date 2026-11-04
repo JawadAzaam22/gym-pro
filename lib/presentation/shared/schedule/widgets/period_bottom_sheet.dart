@@ -142,7 +142,7 @@ class _PeriodBottomSheetState extends ConsumerState<PeriodBottomSheet> {
       isActive: widget.period.isActive,
     );
     final res =
-        await ref.read(hallRepositoryProvider).updateAccessPeriod(updated);
+        await ref.read(hallUseCasesProvider).updateAccessPeriod(updated);
     setState(() => _loading = false);
     if (!mounted) return;
     res.fold(
@@ -168,8 +168,7 @@ class _PeriodBottomSheetState extends ConsumerState<PeriodBottomSheet> {
         backgroundColor: AppColors.surfaceCard,
         title: const Text('حذف الفترة؟',
             style: TextStyle(color: AppColors.textPrimary)),
-        content: const Text(
-            'هل أنت متأكد من حذف هذه الفترة؟ لا يمكن التراجع.',
+        content: const Text('هل أنت متأكد من حذف هذه الفترة؟ لا يمكن التراجع.',
             style: TextStyle(color: AppColors.textSecondary)),
         actions: [
           TextButton(
@@ -177,8 +176,7 @@ class _PeriodBottomSheetState extends ConsumerState<PeriodBottomSheet> {
               child: const Text('إلغاء')),
           ElevatedButton(
             onPressed: () => Navigator.pop(ctx, true),
-            style:
-                ElevatedButton.styleFrom(backgroundColor: AppColors.error),
+            style: ElevatedButton.styleFrom(backgroundColor: AppColors.error),
             child: const Text('حذف'),
           ),
         ],
@@ -187,8 +185,9 @@ class _PeriodBottomSheetState extends ConsumerState<PeriodBottomSheet> {
     if (confirmed != true) return;
 
     setState(() => _loading = true);
-    final res =
-        await ref.read(hallRepositoryProvider).deleteAccessPeriod(widget.period.id);
+    final res = await ref
+        .read(hallUseCasesProvider)
+        .deleteAccessPeriod(widget.period.id);
     setState(() => _loading = false);
     if (!mounted) return;
     res.fold(

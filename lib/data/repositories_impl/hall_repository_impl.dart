@@ -75,7 +75,8 @@ class HallRepositoryImpl implements IHallRepository {
   }
 
   @override
-  Future<Either<Failure, List<AccessPeriod>>> getAccessPeriods(int hallId) async {
+  Future<Either<Failure, List<AccessPeriod>>> getAccessPeriods(
+      int hallId) async {
     try {
       final list = await datasource.getAccessPeriods(hallId);
       return Right(list.map((e) => e.toEntity()).toList());
@@ -99,7 +100,8 @@ class HallRepositoryImpl implements IHallRepository {
   }
 
   @override
-  Future<Either<Failure, AccessPeriod>> createAccessPeriod(AccessPeriod period) async {
+  Future<Either<Failure, AccessPeriod>> createAccessPeriod(
+      AccessPeriod period) async {
     try {
       final model = AccessPeriodModel.fromEntity(period);
       final created = await datasource.createAccessPeriod(model);
@@ -112,7 +114,8 @@ class HallRepositoryImpl implements IHallRepository {
   }
 
   @override
-  Future<Either<Failure, AccessPeriod>> updateAccessPeriod(AccessPeriod period) async {
+  Future<Either<Failure, AccessPeriod>> updateAccessPeriod(
+      AccessPeriod period) async {
     try {
       final model = AccessPeriodModel.fromEntity(period);
       final updated = await datasource.updateAccessPeriod(model);

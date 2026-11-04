@@ -9,4 +9,3 @@ class LoginUc {
   Future<Either<Failure, User>> call(String email, String password) =>
       repository.login(email, password);
 }
-

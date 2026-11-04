@@ -8,4 +8,3 @@ class CreateDietPlanUc {
   CreateDietPlanUc(this.repository);
   Future<Either<Failure, Diet>> call(Diet d) => repository.createDiet(d);
 }
-

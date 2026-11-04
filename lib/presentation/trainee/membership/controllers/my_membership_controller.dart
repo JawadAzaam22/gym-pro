@@ -7,7 +7,7 @@ import '../../../shared/auth/controllers/auth_controller.dart';
 final myMembershipProvider = FutureProvider<Membership?>((ref) async {
   final currentUser = ref.read(authControllerProvider).value;
   final traineeId = currentUser?.id ?? '';
-  final res = await ref.read(membershipRepositoryProvider).getLatestMembership(traineeId);
+  final res =
+      await ref.read(membershipUseCasesProvider).getLatestMembership(traineeId);
   return res.fold((l) => throw Exception(l.message), (r) => r);
 });
-

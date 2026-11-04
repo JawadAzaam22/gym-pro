@@ -17,7 +17,8 @@ class PrivateSessionsScreen extends ConsumerStatefulWidget {
   const PrivateSessionsScreen({super.key});
 
   @override
-  ConsumerState<PrivateSessionsScreen> createState() => _PrivateSessionsScreenState();
+  ConsumerState<PrivateSessionsScreen> createState() =>
+      _PrivateSessionsScreenState();
 }
 
 class _PrivateSessionsScreenState extends ConsumerState<PrivateSessionsScreen> {
@@ -78,13 +79,15 @@ class _FixedScheduleTabState extends ConsumerState<_FixedScheduleTab> {
                     TextButton.icon(
                       icon: const Icon(Icons.add, size: 18),
                       label: const Text('إضافة موعد'),
-                      onPressed: () => _showAddScheduleDialog(context, ref, selectedRelationId),
+                      onPressed: () => _showAddScheduleDialog(
+                          context, ref, selectedRelationId),
                     ),
                 ],
               ),
               const SizedBox(height: 8),
               relationsAsync.when(
-                loading: () => const LoadingIndicator(message: 'جاري تحميل العلاقات...'),
+                loading: () =>
+                    const LoadingIndicator(message: 'جاري تحميل العلاقات...'),
                 error: (e, _) => AsyncErrorView(
                   error: e,
                   onRetry: () => ref.invalidate(activeTrainerTraineesProvider),
@@ -93,14 +96,17 @@ class _FixedScheduleTabState extends ConsumerState<_FixedScheduleTab> {
                   if (relations.isEmpty) {
                     return const Text(
                       'لا توجد علاقات نشطة',
-                      style: TextStyle(color: AppColors.textMuted, fontSize: 13),
+                      style:
+                          TextStyle(color: AppColors.textMuted, fontSize: 13),
                     );
                   }
                   return _RelationSelector(
                     relations: relations,
                     selectedId: selectedRelationId,
                     onSelected: (id) {
-                      ref.read(selectedTrainerTraineeIdProvider.notifier).state = id;
+                      ref
+                          .read(selectedTrainerTraineeIdProvider.notifier)
+                          .state = id;
                     },
                   );
                 },
@@ -141,7 +147,8 @@ class _FixedScheduleTabState extends ConsumerState<_FixedScheduleTab> {
   ) {
     int selectedDay = DateTime.now().weekday % 7;
     TimeOfDay startTime = TimeOfDay.now();
-    TimeOfDay endTime = TimeOfDay(hour: TimeOfDay.now().hour + 1, minute: TimeOfDay.now().minute);
+    TimeOfDay endTime = TimeOfDay(
+        hour: TimeOfDay.now().hour + 1, minute: TimeOfDay.now().minute);
     bool isSubmitting = false;
 
     showDialog(
@@ -213,7 +220,7 @@ class _FixedScheduleTabState extends ConsumerState<_FixedScheduleTab> {
                         createdAt: DateTime.now(),
                       );
                       final res = await ref
-                          .read(bookingRepositoryProvider)
+                          .read(bookingUseCasesProvider)
                           .addScheduleSlot(slot.toEntity());
                       String? errorMsg;
                       res.fold((f) => errorMsg = f.message, (_) {});
@@ -226,14 +233,16 @@ class _FixedScheduleTabState extends ConsumerState<_FixedScheduleTab> {
                         return;
                       }
                       Navigator.pop(ctx);
-                      ref.invalidate(privateScheduleForRelationProvider(trainerTraineeId));
+                      ref.invalidate(
+                          privateScheduleForRelationProvider(trainerTraineeId));
                       AppToast.success(context, 'تمت إضافة الموعد الثابت');
                     },
               child: isSubmitting
                   ? const SizedBox(
                       height: 18,
                       width: 18,
-                      child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white),
+                      child: CircularProgressIndicator(
+                          strokeWidth: 2, color: Colors.white),
                     )
                   : const Text('حفظ'),
             ),
@@ -275,8 +284,7 @@ class _RelationSelector extends StatelessWidget {
             borderRadius: BorderRadius.circular(10),
             onTap: () => onSelected(rel.id),
             child: Container(
-              padding:
-                  const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
               decoration: BoxDecoration(
                 color: isSelected
                     ? AppColors.primary.withOpacity(0.12)
@@ -379,21 +387,25 @@ class _ScheduleWeekView extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final scheduleAsync = ref.watch(privateScheduleForRelationProvider(relationId));
+    final scheduleAsync =
+        ref.watch(privateScheduleForRelationProvider(relationId));
     final relationAsync = ref.watch(trainerTraineeByIdProvider(relationId));
 
     return scheduleAsync.when(
       loading: () => const LoadingIndicator(message: 'جاري تحميل المواعيد...'),
       error: (e, _) => AsyncErrorView(
         error: e,
-        onRetry: () => ref.invalidate(privateScheduleForRelationProvider(relationId)),
+        onRetry: () =>
+            ref.invalidate(privateScheduleForRelationProvider(relationId)),
       ),
       data: (schedule) {
         return relationAsync.when(
-          loading: () => const LoadingIndicator(message: 'جاري تحميل بيانات العلاقة...'),
+          loading: () =>
+              const LoadingIndicator(message: 'جاري تحميل بيانات العلاقة...'),
           error: (e, _) => AsyncErrorView(
             error: e,
-            onRetry: () => ref.invalidate(trainerTraineeByIdProvider(relationId)),
+            onRetry: () =>
+                ref.invalidate(trainerTraineeByIdProvider(relationId)),
           ),
           data: (relation) {
             if (relation == null) {
@@ -449,7 +461,8 @@ class _ScheduleWeekView extends ConsumerWidget {
                           child: Center(
                             child: Text(
                               'لا توجد مواعيد',
-                              style: TextStyle(color: AppColors.textMuted, fontSize: 13),
+                              style: TextStyle(
+                                  color: AppColors.textMuted, fontSize: 13),
                             ),
                           ),
                         ),
@@ -467,12 +480,14 @@ class _ScheduleWeekView extends ConsumerWidget {
                                       color: AppColors.info.withOpacity(0.12),
                                       borderRadius: BorderRadius.circular(12),
                                     ),
-                                    child: const Icon(Icons.schedule, color: AppColors.info),
+                                    child: const Icon(Icons.schedule,
+                                        color: AppColors.info),
                                   ),
                                   const SizedBox(width: 12),
                                   Expanded(
                                     child: Column(
-                                      crossAxisAlignment: CrossAxisAlignment.start,
+                                      crossAxisAlignment:
+                                          CrossAxisAlignment.start,
                                       children: [
                                         Text(
                                           '${_to12Hour(slot.startTime)} - ${_to12Hour(slot.endTime)}',
@@ -496,11 +511,13 @@ class _ScheduleWeekView extends ConsumerWidget {
                                     tooltip: 'حذف',
                                     icon: const Icon(Icons.delete_outline,
                                         size: 18, color: AppColors.error),
-                                    onPressed: () => _confirmDelete(context, ref, slot.id),
+                                    onPressed: () =>
+                                        _confirmDelete(context, ref, slot.id),
                                     style: IconButton.styleFrom(
                                       backgroundColor: AppColors.surfaceLow,
                                       shape: RoundedRectangleBorder(
-                                          borderRadius: BorderRadius.circular(8)),
+                                          borderRadius:
+                                              BorderRadius.circular(8)),
                                     ),
                                   ),
                                 ],
@@ -531,7 +548,8 @@ class _ScheduleWeekView extends ConsumerWidget {
             style: TextStyle(color: AppColors.textSecondary)),
         actions: [
           TextButton(
-              onPressed: () => Navigator.pop(ctx, false), child: const Text('تراجع')),
+              onPressed: () => Navigator.pop(ctx, false),
+              child: const Text('تراجع')),
           ElevatedButton(
             onPressed: () => Navigator.pop(ctx, true),
             style: ElevatedButton.styleFrom(backgroundColor: AppColors.error),
@@ -542,7 +560,12 @@ class _ScheduleWeekView extends ConsumerWidget {
     );
     if (confirm == true && context.mounted) {
       try {
-        await ref.read(bookingDatasourceProvider).deleteScheduleSlot(scheduleId);
+        final result =
+            await ref.read(deletePrivateScheduleSlotProvider).call(scheduleId);
+        result.fold(
+          (failure) => throw Exception(failure.message),
+          (_) {},
+        );
         ref.invalidate(privateScheduleForRelationProvider(relationId));
         AppToast.success(context, 'تم الحذف');
       } catch (e) {

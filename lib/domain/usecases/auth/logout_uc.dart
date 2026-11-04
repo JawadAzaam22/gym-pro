@@ -7,4 +7,3 @@ class LogoutUc {
   LogoutUc(this.repository);
   Future<Either<Failure, void>> call() => repository.logout();
 }
-

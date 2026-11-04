@@ -1,310 +1,364 @@
-# Gym Pro — نظام إدارة صالات رياضية
+# Gym Pro
 
-Gym management system built with **Flutter** and **Supabase**, split into four
-role-based applications served from three entry points: **Admin**,
-**Reception**, and a mobile app for **Trainer + Trainee**. Arabic-first UI with
-full RTL support.
+**A role-based gym management platform built with Flutter and Supabase** —
+memberships, payments, scheduling, bookings, attendance with single-use QR
+check-in, training programs, diet plans and real-time notifications, for four
+roles across three apps.
 
-| | |
-|---|---|
-| **Platforms** | Android · iOS · Web · Windows · macOS (see [platform status](#platform-status)) |
-| **Language** | Dart `3.5.4` · Flutter `3.24.5` |
-| **UI** | Arabic, full RTL, dark theme, responsive phone → desktop |
-| **Backend** | Supabase (PostgreSQL + Row Level Security + Realtime). Schema and server-side logic are managed in the Supabase project. |
-| **Size** | 222 Dart source files in `lib/` · 17 test files |
+![Flutter](https://img.shields.io/badge/Flutter-3.24.x-02569B?logo=flutter)
+![Dart](https://img.shields.io/badge/Dart-3.5-0175C2?logo=dart)
+![Supabase](https://img.shields.io/badge/Backend-Supabase-3ECF8E?logo=supabase)
+![State](https://img.shields.io/badge/State-Riverpod-00B8D4)
+![Platforms](https://img.shields.io/badge/Platforms-Web%20%7C%20Android-4285F4)
 
-[![CI](https://github.com/jawad-azzam/gym_pro/actions/workflows/ci.yml/badge.svg)](../../actions/workflows/ci.yml)
-
----
+> The user interface is Arabic and right-to-left. Identifiers, documentation
+> and this README are in English; many inline code comments are in Arabic.
 
 ## Contents
 
-1. [What it does](#1-what-it-does)
-2. [Highlights](#2-highlights)
-3. [Architecture](#3-architecture)
-4. [Entry points and role guard](#4-entry-points-and-role-guard)
-5. [Tech stack (resolved versions)](#5-tech-stack-resolved-versions)
-6. [Getting started](#6-getting-started)
-7. [Commands](#7-commands)
-8. [Notifications](#8-notifications)
-9. [Testing](#9-testing)
-10. [Platform status](#10-platform-status)
-11. [Known limitations](#11-known-limitations)
-12. [Built with AI assistance](#12-built-with-ai-assistance)
-13. [Author and license](#13-author-and-license)
+[Screenshots](#screenshots) ·
+[What it does](#what-it-does) ·
+[Architecture](#architecture) ·
+[Tech stack](#tech-stack) ·
+[Database](#database) ·
+[Security model](#security-model) ·
+[QR check-in](#qr-check-in) ·
+[Notifications](#notifications-and-realtime) ·
+[Getting started](#getting-started) ·
+[Existing projects](#applying-the-migrations-to-an-existing-project) ·
+[Testing](#testing) ·
+[Repository layout](#repository-layout) ·
+[License](#license)
 
----
+## Screenshots
 
-## 1. What it does
+<!-- TODO(author): add these PNG files to the `screenshots/` folder (dark theme,
+     Arabic RTL; ~1440x900 for web, 390x844 for mobile). The images below render
+     once the files exist. Use demo accounts only. -->
 
-### Admin (web-first — `lib/main_admin.dart`)
-Dashboard with live stats and charts, user management (staff/trainees,
-created through Supabase Edge Functions), halls and access periods, group
-session templates, a weekly schedule view, and financial reports with PDF
-export.
+### Administration (web)
 
-### Reception (web-first — `lib/main_reception.dart`)
-Member check-in (name/phone search or QR scan), membership create/renew with
-overlap validation, group and private-session booking with capacity checks,
-trainer assignment, manual payment recording, and a daily schedule.
+| Dashboard | Users | Financial reports |
+|---|---|---|
+| ![Admin dashboard](screenshots/admin.png) | ![User management](screenshots/admin_users.png) | ![Reports](screenshots/admin_reports.png) |
 
-### Trainer (mobile — `lib/main_mobile.dart`)
-Trainee list with detail view, training-program builder (days → exercises),
-diet builder (days → meals), attendance history, fixed private-schedule view.
+### Reception (web)
 
-### Trainee (mobile — `lib/main_mobile.dart`)
-Personal QR code for check-in, group-session booking, membership status,
-my-trainer page, program and diet viewers, booking/membership history,
-private-session bookings.
+| Dashboard | Check-in | Memberships |
+|---|---|---|
+| ![Reception dashboard](screenshots/reception.png) | ![Check-in](screenshots/reception_checkin.png) | ![Memberships](screenshots/reception_membership.png) |
 
----
+### Mobile — trainee and trainer
 
-## 2. Highlights
+| Trainee | Personal QR | Trainer | Notifications |
+|---|---|---|---|
+| ![Trainee](screenshots/trainee.png) | ![QR](screenshots/trainee_qr.png) | ![Trainer](screenshots/trainer.png) | ![Notifications](screenshots/notifications.png) |
 
-All verified against the code in this repository:
+## What it does
 
-1. **Three clean layers** — `domain/` is pure Dart (zero Flutter/Supabase
-   imports, enforced by review); only `data/datasources/` touch Supabase
-   query builders.
-2. **Repository interfaces in the domain** — 12 `i_*_repository.dart`
-   interfaces; DI wiring in `lib/data/providers.dart`.
-3. **Realtime notifications** — Supabase Realtime stream per user with a live
-   unread badge (`notifications` table, RLS-scoped).
-4. **Role-based entry gating** — `RoleGuard` + per-entry router redirects;
-   wrong-role sessions are signed out.
-5. **Arabic PDF export** — Cairo font embedded in `pdf` documents with RTL
-   text direction.
-6. **QR check-in** — static per-trainee QR plus scanner with duplicate
-   same-day check-in prevention in the client.
-7. **Date-safe memberships** — date-only columns, overlap checks on create
-   and renew, RPC-assisted expiry sweep.
-8. **Widget + unit test suite** — 166 test cases across 17 files, including
-   server-contract parsing and deep-link mapping for notifications.
+| Role | App | Main capabilities |
+|---|---|---|
+| **Admin** | Web (`lib/main_admin.dart`) | Create/disable users, halls and opening periods, group sessions, financial reports with PDF export |
+| **Reception** | Web (`lib/main_reception.dart`) | Memberships and renewals, payments, bookings, trainer assignment, manual and QR check-in |
+| **Trainer** | Mobile (`lib/main_mobile.dart`) | Assigned trainees, training programs (days → exercises), diet plans (days → meals), private-session schedule |
+| **Trainee** | Mobile (`lib/main_mobile.dart`) | Membership status, bookings, attendance history, trainer, programs, diet, private sessions, personal QR |
 
----
+Rules the database enforces (not only the UI):
 
-## 3. Architecture
+- one check-in per trainee per day (and per session) — unique index;
+- check-in is rejected when the latest membership is inactive or ended;
+- a session cannot be booked beyond its capacity (row-locked trigger);
+- a QR token works once and expires after 90 seconds;
+- authorization fields on a profile can only be changed by an administrator.
 
-Clean Architecture with strictly unidirectional dependencies:
+Notifications (booking, membership, trainer assignment, private session,
+expiring membership) arrive in-app through Supabase Realtime; local reminders
+use `flutter_local_notifications`.
+
+## Architecture
+
+Clean-architecture-style layering with a one-way dependency direction:
 
 ```mermaid
-graph TD
-    P[presentation<br/>screens · controllers · routers] --> D[domain<br/>entities · use-case interfaces · failures]
-    DA[data<br/>models · datasources · repository impls] --> D
-    P --> DA
-    DA --> S[(Supabase<br/>PostgreSQL + RLS + Realtime)]
-    C[core<br/>theme · constants · utils · bootstrap] -. imported by all .-> P & DA & D
+flowchart TD
+  P[Presentation<br/>screens · controllers · routers] --> U[Use cases]
+  U --> D[Domain<br/>entities · repository contracts · failures]
+  R[Repository implementations] --> D
+  R --> S[Data sources]
+  S --> B[(Supabase<br/>PostgreSQL · Auth · Realtime · Edge Functions)]
+  P -. providers .-> R
 ```
 
-Rules confirmed in this codebase:
+- `lib/domain` — entities, repository interfaces, failures, use cases. It
+  imports no Supabase code.
+- `lib/data` — Supabase data sources, JSON models, repository
+  implementations, and the Riverpod wiring in `lib/data/providers.dart`.
+  Operations return `Either<Failure, T>` (`dartz`).
+- `lib/presentation` — 43 screens grouped by role, Riverpod controllers and
+  `go_router` route files per app.
+- `lib/core` — bootstrap and `.env` loading, theme, errors, constants,
+  notification service.
 
-- `lib/domain` contains **no** `package:flutter`, `package:supabase`, or
-  Riverpod imports — plain Dart + `equatable` + `dartz`.
-- Supabase query builders (`.from`, `.rpc`, `.stream`) appear **only** in
-  `lib/data/datasources` (plus one role lookup in `lib/core/auth`).
-- Errors are typed `Failure` classes; repositories return
-  `Either<Failure, T>`.
-- Screens observe state through Riverpod providers declared per feature.
+Three entry points share this code, so each deployed app contains only the
+screens its roles need.
 
-> Honest note: several presentation screens currently call datasources or
-> import models directly (program/diet/private-session builders), and many
-> controllers unwrap `Either` by throwing. This is tracked in
-> `docs/internal/` as known tech debt.
+## Tech stack
 
----
-
-## 4. Entry points and role guard
-
-There is **no `main.dart`** — every run/build needs an explicit `--target`:
-
-| File | Allowed roles | Target |
-|---|---|---|
-| `lib/main_admin.dart` | `admin` | Wide screens / web |
-| `lib/main_reception.dart` | `reception` | Wide screens / web |
-| `lib/main_mobile.dart` | `trainer`, `trainee` | Phones / tablets |
-
-Role is read from the `profiles` table (60-second client cache) and enforced
-by `RoleGuard` at login and by each router's `redirect`. Demo accounts:
-`TODO(author)` — document the accounts you create in your Supabase project.
-
----
-
-## 5. Tech stack (resolved versions)
-
-From `pubspec.lock`:
-
-| Concern | Package (resolved) |
+| Area | Choice |
 |---|---|
-| State management | `flutter_riverpod` 2.6.1 |
-| Backend | `supabase_flutter` 2.15.4 |
-| Navigation | `go_router` 14.8.1 |
-| PDF | `pdf` 3.11.3 · `printing` 5.14.3 |
-| QR | `qr_flutter` 4.1.0 · `mobile_scanner` 5.2.3 |
-| Local notifications | `flutter_local_notifications` 19.5.0 · `timezone` 0.10.1 |
-| Charts | `fl_chart` 0.69.2 |
-| Styling | `google_fonts` 6.3.0 (Cairo) · `flutter_svg` 2.1.0 |
-| Functional helpers | `dartz` 0.10.1 · `equatable` 2.1.0 |
-| Env loading | `flutter_dotenv` 5.2.1 |
-| Testing | `flutter_test` · `mocktail` 1.0.5 |
-| Linting | `flutter_lints` 4.0 · `custom_lint` + `riverpod_lint` |
+| UI / platforms | Flutter 3.24, Dart 3.5, Material, Google Fonts, `fl_chart` |
+| State & DI | `flutter_riverpod` |
+| Navigation | `go_router` (role-aware redirects) |
+| Backend | Supabase: PostgreSQL + RLS, Auth with a custom access-token hook, Realtime, Edge Functions (Deno), `pg_cron` |
+| QR | `qr_flutter` (display), `mobile_scanner` (scan) |
+| Reports | `pdf` + `printing` |
+| Errors | `dartz` `Either`, `equatable` |
+| Quality | `flutter_lints`, `custom_lint` + `riverpod_lint`, `mocktail` |
 
-Declared but currently unused in code: `flutter_screenutil`, `http`.
+## Database
 
----
+22 tables, all with Row Level Security. Migrations live in
+`supabase/migrations` and must be applied in order:
 
-## 6. Getting started
+| Migration | Responsibility |
+|---|---|
+| `20260101000000_initial_schema.sql` | Extensions, enums, tables, indexes, RLS enablement |
+| `20260101000100_functions_and_triggers.sql` | Role helpers, auth hook, new-user trigger, notification triggers, delete-user cascade |
+| `20260101000200_rls_policies.sql` | 50 RLS policies |
+| `20260101000300_realtime_and_cron.sql` | Realtime publication (`notifications`) and cron jobs |
+| `20260101000400_secure_qr_tokens.sql` | Hashed, short-lived QR tokens and RPCs |
+| `20261101000000_security_hardening.sql` | Security hardening, atomic attendance/QR RPCs, booking-capacity trigger |
 
-**Prerequisites:** Flutter 3.24.x (Dart 3.5.4), a Supabase project.
+Table groups: identity (`profiles`, `trainer_trainees`, `deleted_users_archive`),
+facilities (`halls`, `access_periods`, `session_periods`), scheduling
+(`sessions`, `bookings`, `private_training_schedule`, `private_training_sessions`),
+membership and money (`memberships`, `payment_costs`, `reports`),
+attendance (`attendance`, `trainee_qr_tokens`), training content
+(`training_programs`, `program_days`, `program_exercises`, `diets`,
+`diet_days`, `diet_meals`) and `notifications`.
 
-1. Copy the env file and fill in your project's public values
-   (**anon/publishable key only — never a `service_role` key**):
+Edge Functions (`supabase/functions`, JWT verification on):
 
+- `create-user` — active admin or reception only (reception cannot create admins);
+  validates email, password (6+ characters), role and gender; the role is stored
+  in `app_metadata`, which only the server can write.
+- `delete-user` — active admin only; cannot delete itself; archives a snapshot
+  before deleting.
+
+## Security model
+
+- **Authentication & roles.** Supabase Auth. A custom access-token hook copies
+  the profile role into the `app_role` claim; SQL helpers (`is_admin()`,
+  `is_staff()`, …) also check `is_active` live.
+- **Authorization lives in PostgreSQL.** The client's filters are never trusted;
+  RLS decides. Trainees and trainers see only their own rows.
+- **No self-registration.** Sign-in is email and password; accounts are created
+  only by admin or reception through
+  `create-user`; public sign-up is disabled (`supabase/config.toml`), and the
+  new-user trigger takes the role from server-only `raw_app_meta_data`.
+- **Protected columns.** Non-admins cannot change `role`, `is_active` or `email`
+  on a profile (guard trigger).
+- **Least privilege.** `anon` has no table or helper-function access; trigger
+  functions are not callable as RPC; QR tokens are reachable only through
+  `SECURITY DEFINER` RPCs.
+- **Secrets.** Only the public anon/publishable key is in the app. The
+  `service_role` key exists only inside Edge Functions.
+
+## QR check-in
+
+1. The trainee opens the QR screen; `issue_trainee_qr_token()` verifies the
+   caller is an active trainee, creates a random token, stores **only its
+   SHA-256 digest**, replaces any previous token, and returns
+   `gympro_qr_v1:<token>`. It expires after 90 seconds.
+2. Reception scans it; `check_in_by_qr()` verifies the caller is active staff,
+   **deletes** the token, checks the membership and writes the attendance row —
+   in a single transaction with the server clock.
+3. A failure (expired membership, duplicate check-in) rolls everything back, so a
+   token is consumed only by a successful check-in, and can never be accepted
+   twice.
+
+The QR value contains no user id or personal data.
+
+## Notifications and Realtime
+
+- **In-app:** a Riverpod stream backed by Supabase Postgres Changes. The initial
+  query is authoritative; later row changes update the list. On logout or
+  account switch the provider is invalidated so the previous user's stream is
+  not kept.
+- **Local reminders:** `flutter_local_notifications`; no push server required.
+- **Security:** the client filters by `user_id`, but RLS is what protects the
+  data — both select policies require `user_id = auth.uid()`. Owners can update
+  only `is_read`.
+- **Scope:** the `supabase_realtime` publication contains only
+  `public.notifications`, so payments, bookings and memberships are never
+  broadcast.
+- **Producers:** database triggers (booking, membership, trainer assignment,
+  private session) and two pg_cron jobs (`expire-memberships` daily at 00:00,
+  `notify-expiring-memberships` daily at 08:00, database time).
+
+## Getting started
+
+### Prerequisites
+
+Flutter 3.24.x (Dart 3.5), Chrome for the web apps, Android Studio for the
+mobile app, the [Supabase CLI](https://supabase.com/docs/guides/local-development/cli/getting-started)
+and a Supabase project.
+
+### 1. Configure the app
+
+```bash
+cp .env.example .env      # then fill in your project values
+flutter pub get
+```
+
+```env
+SUPABASE_URL=https://YOUR-PROJECT.supabase.co
+SUPABASE_ANON_KEY=YOUR_ANON_OR_PUBLISHABLE_KEY
+```
+
+`.env` is bundled as a Flutter asset, so it must exist before you run or
+build. Never put a `service_role` key in it. (`SUPABASE_PUBLISHABLE_KEY` is
+also accepted.)
+
+### 2. Set up Supabase
+
+**New project**
+
+```bash
+supabase login
+supabase link --project-ref <project-ref>
+supabase db push
+supabase functions deploy create-user
+supabase functions deploy delete-user
+```
+
+Optional: `supabase secrets set ALLOWED_ORIGINS=https://admin.example.com,https://reception.example.com`
+to restrict browser origins for `create-user`.
+
+Then, in the dashboard, enable the **Custom Access Token hook**
+(`public.custom_access_token_hook`) if it is not already enabled by
+`config.toml`, and turn on leaked-password protection.
+
+**Existing project whose migration history differs:** follow
+[Applying the migrations to an existing project](#applying-the-migrations-to-an-existing-project)
+*before* `db push`. Do not run `supabase db reset` against production.
+
+### 3. Create the first administrator
+
+`create-user` needs an existing admin, so promote the first one by hand: create
+the user in **Authentication → Users**, then in the SQL editor:
+
+```sql
+update public.profiles set role = 'admin' where email = 'you@example.com';
+update auth.users
+   set raw_app_meta_data = raw_app_meta_data || '{"role":"admin"}'::jsonb
+ where email = 'you@example.com';
+```
+
+Sign out and in again so the role claim refreshes. Every other account is
+created from the admin or reception app.
+
+### 4. Run
+
+```bash
+flutter run -t lib/main_admin.dart     -d chrome
+flutter run -t lib/main_reception.dart -d chrome
+flutter run -t lib/main_mobile.dart    -d <device-id>
+```
+
+Release builds:
+
+```bash
+flutter build web --release -t lib/main_admin.dart
+flutter build web --release -t lib/main_reception.dart
+flutter build apk --release -t lib/main_mobile.dart
+```
+
+
+## Applying the migrations to an existing project
+
+If your hosted project already contains this schema but its migration history
+differs from `supabase/migrations`, align the history before pushing —
+`supabase db push` refuses to run while the remote history contains versions the
+repository does not have.
+
+1. **Back up:** `supabase db dump --linked -f backup_schema.sql` and
+   `supabase db dump --linked --data-only -f backup_data.sql`.
+2. **Compare:** dump the hosted `public` schema, apply the migrations to a scratch
+   stack, dump that schema and diff the two.
+3. **Re-label the history** (executes no SQL):
    ```bash
-   cp .env.example .env
+   supabase link --project-ref <project-ref>
+   supabase migration list                                    # note the remote-only versions
+   supabase migration repair --status reverted <remote-only versions…>
+   supabase migration repair --status applied 20260101000000 20260101000100 \
+     20260101000200 20260101000300 20260101000400
    ```
+4. **Deploy the Edge Functions first** (`supabase functions deploy create-user`,
+   `… delete-user`) — the hardening migration reads roles from `app_metadata`,
+   which the current `create-user` sets.
+5. **Apply the hardening migration** on a disposable project, then
+   `supabase db push` on the real one.
+6. **Dashboard settings** that SQL cannot express: disable "Allow new users to
+   sign up", enable leaked-password protection, and point the Custom Access Token
+   hook at `public.custom_access_token_hook`.
+7. **Ship the matching app build** after steps 4–5.
 
-   ```env
-   SUPABASE_URL=https://YOUR-PROJECT.supabase.co
-   SUPABASE_ANON_KEY=YOUR_ANON_OR_PUBLISHABLE_KEY
-   ```
+`supabase/setup/full_setup_new_project.sql` contains all migrations in one file
+for creating a **new** project from the SQL editor. Never run it on an existing
+project.
 
-2. Install and (optionally) run code generation:
-
-   ```bash
-   flutter pub get
-   dart run build_runner build --delete-conflicting-outputs   # currently: 0 outputs (models are hand-written)
-   ```
-
-3. Run an entry point:
-
-   ```bash
-   flutter run -t lib/main_admin.dart     -d chrome
-   flutter run -t lib/main_reception.dart -d chrome
-   flutter run -t lib/main_mobile.dart    -d <device-id>
-   ```
-
-The database schema and server-side logic (triggers, cron, Edge Functions
-`create-user` / `delete-user`) live in the Supabase project and are not part
-of this repository.
-
----
-
-## 7. Commands
+## Testing
 
 ```bash
 flutter analyze --no-pub
 dart run custom_lint
-flutter test
-flutter build apk   --debug   --target=lib/main_mobile.dart
-flutter build web   --release --target=lib/main_admin.dart
-flutter build web   --release --target=lib/main_reception.dart
+flutter test test/domain      # fast, no widgets
+flutter test                  # full suite
 ```
 
----
+The suite has 176 test cases in 22 files covering use cases, models, providers
+and widgets.
 
-## 8. Notifications
+Database behaviour is verified against a Supabase project rather than with
+Flutter tests:
 
-Two layers, no paid push infrastructure:
+- an RLS role matrix (admin, reception, trainer, trainee, deactivated user, anon);
+- `record_attendance` → `ALREADY_CHECKED_IN`, `MEMBERSHIP_EXPIRED`;
+- `check_in_by_qr` → a second use of the same token fails;
+- booking the last seat twice concurrently → `SESSION_FULL`;
+- a non-admin updating their own `role`, `is_active` or `email` is rejected.
 
-### Layer 1 — in-app (Supabase Realtime)
+## Repository layout
 
-The `notifications` table is streamed per user (`user_id` filter + RLS).
-`NotificationBell` shows a live unread badge (99+ cap) in the admin shell,
-reception shell, trainer dashboard, and trainee dashboard.
-`NotificationsScreen` supports mark-read, mark-all, swipe-delete, pull-to-refresh,
-and **deep-links** each item to the recipient role's screen via the
-`data.screen` payload (`my_bookings`, `membership`, `my_trainer`, `trainees`,
-`fixed_schedule`).
-
-Notifications are created **only on the server** (triggers + a daily cron for
-`membership_expiring_soon`). The client maps all six server types and never
-crashes on unknown types.
-
-### Layer 2 — local scheduled notifications
-
-`flutter_local_notifications` is initialized (with Android channel,
-`POST_NOTIFICATIONS` runtime permission, inexact scheduling, boot receivers,
-core-library desugaring) and wrapped in `try/catch` for unsupported platforms.
-No client-side scheduling events are wired up yet, and the timezone database
-is initialized without a device-zone lookup (`tz.local` defaults to UTC;
-scheduled instants would still fire correctly via `TZDateTime.from`, but a
-device-timezone package is recommended before enabling scheduling).
-
-### Honest limitation
-
-**There is no push service (no FCM/OneSignal). A user whose app is not
-running receives nothing for server-side events. In-app notifications arrive
-only while the app is open; local reminders (when wired up) fire only if they
-were scheduled earlier on the same device.**
-
----
-
-## 9. Testing
-
-```bash
-flutter test
+```text
+lib/
+  core/            bootstrap, theme, errors, constants, notifications
+  domain/          entities, repository contracts, use cases
+  data/            data sources, models, repository implementations, providers.dart
+  presentation/    admin · reception · trainer · trainee · mobile · shared
+  main_admin.dart  main_reception.dart  main_mobile.dart
+supabase/
+  migrations/      6 ordered SQL files
+  functions/       create-user, delete-user
+  setup/           full_setup_new_project.sql (SQL-editor setup for a NEW project only)
+  config.toml
+screenshots/       PNG files used by this README
+test/              domain, models, providers, screens
+.env.example
 ```
 
-Current state (measured on this repository):
+Private notes and unreleased configuration belong in the git-ignored
+`privateConfig/` directory.
 
-| Metric | Value |
-|---|---|
-| Test files | 17 |
-| Test cases | 166 |
-| Passing | 147 |
-| Failing (pre-existing) | 19 — stale widget tests: `private_sessions_screen_test` (15), `daily_schedule_screen_test` (3), `drawer_hit_test` (1) |
-| Hanging | `drawer_nav_test.dart` contains a test that times out (excluded from CI) |
+## License
 
-Notification coverage is the strongest area: server-contract type parsing,
-`data` jsonb payloads, deep-link mapping for all six `screen` values × roles,
-unread-count live updates, stream-error resilience, and logout cleanup.
+Copyright © 2026 Jawad Azzam. All rights reserved. See [LICENSE](LICENSE).
+This is a portfolio project: contact the author before reusing,
+redistributing or deploying it commercially.
 
----
+## Author
 
-## 10. Platform status
-
-| Platform | Status | Evidence |
-|---|---|---|
-| Android (debug APK, mobile target) | **Verified build** | `flutter build apk --debug --target=lib/main_mobile.dart` succeeds; merged manifest contains `POST_NOTIFICATIONS`, boot receivers, desugaring |
-| Web (release, admin target) | **Verified build** | `flutter build web --release --target=lib/main_admin.dart` succeeds |
-| Web (reception/mobile targets) | Scaffolded only | same toolchain, not built in this review |
-| iOS | Scaffolded only | `ios/` present; no Apple toolchain verification |
-| macOS / Windows | Scaffolded only | folders present; no verification |
-| Release APK signing | Unverified | no keystore configured |
-
----
-
-## 11. Known limitations
-
-- **No push notifications** — see the honest limitation above.
-- Presentation layer bypasses use cases in several features (direct
-  datasource calls in program/diet/private-session screens).
-- Some list queries have no pagination/limits (payments, attendance history).
-- PDF export embeds the Cairo font but does not enable Arabic shaping
-  (`pdf` package flag), so connected-letter rendering in PDFs is imperfect.
-- QR payload is a static `trainee_<uuid>` (no signature/expiry).
-- 19 pre-existing failing widget tests and one hanging test (see Testing).
-- Edge Functions `create-user` / `delete-user` live only in the Supabase
-  project (documentation gap).
-
-See `docs/internal/VERIFICATION_REPORT.en.md` for the full finding list.
-
----
-
-## 12. Built with AI assistance
-
-This project was built with AI assistance (Claude) under the author's
-direction. The author decided the architecture (Clean Architecture, three
-entry points, Riverpod, Supabase), the feature set per role, the Arabic RTL
-design, and the notification design; the AI generated large portions of the
-implementation, tests, and documentation drafts, and the author reviewed,
-integrated, and refined the result. Personal claims (demo data, deployment
-history, client feedback) are marked `TODO(author)`.
-
----
-
-## 13. Author and license
-
-**Jawad Azzam** — [LinkedIn](https://www.linkedin.com/in/jawad-azzam-dev/)
-
-Released under the [MIT License](LICENSE).
+**Jawad Azzam** — Software Engineer (Flutter, Spring Boot)
+· GitHub [@JawadAzaam22](https://github.com/JawadAzaam22)
+· LinkedIn [jawad-azzam-dev](https://www.linkedin.com/in/jawad-azzam-dev)

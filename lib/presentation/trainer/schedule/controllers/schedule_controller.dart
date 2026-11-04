@@ -5,16 +5,19 @@ import '../../../../domain/entities/access_period.dart';
 import '../../../../domain/entities/private_training_schedule.dart';
 import '../../../../domain/entities/session.dart';
 
-
 /// المواعيد الثابتة الأسبوعية للمدرب (قراءة فقط)
 final trainerFixedScheduleProvider =
-    FutureProvider.family<List<PrivateTrainingSchedule>, String>((ref, trainerId) async {
-  final res = await ref.read(bookingRepositoryProvider).getScheduleForTrainer(trainerId);
+    FutureProvider.family<List<PrivateTrainingSchedule>, String>(
+        (ref, trainerId) async {
+  final res =
+      await ref.read(bookingUseCasesProvider).getScheduleForTrainer(trainerId);
   return res.fold((l) => throw Exception(l.message), (r) => r);
 });
 
-final trainerSessionsProvider = FutureProvider.family<List<Session>, String>((ref, trainerId) async {
-  final res = await ref.read(sessionRepositoryProvider).getSessionsByTrainer(trainerId);
+final trainerSessionsProvider =
+    FutureProvider.family<List<Session>, String>((ref, trainerId) async {
+  final res =
+      await ref.read(sessionUseCasesProvider).getSessionsByTrainer(trainerId);
   return res.fold((l) => throw Exception(l.message), (r) => r);
 });
 
@@ -22,18 +25,21 @@ final trainerSessionsProvider = FutureProvider.family<List<Session>, String>((re
 /// الفعلي (كانت الشاشة تعرض فقط تاريخ بداية/نهاية التسجيل بلا أي فكرة عن
 /// اليوم/الوقت الحقيقي الذي تنعقد فيه الحصة).
 final trainerSessionsDisplayProvider =
-    FutureProvider.family<List<TrainerSessionDisplay>, String>((ref, trainerId) async {
+    FutureProvider.family<List<TrainerSessionDisplay>, String>(
+        (ref, trainerId) async {
   final sessions = await ref.watch(trainerSessionsProvider(trainerId).future);
   if (sessions.isEmpty) return [];
 
-  final hallsRes = await ref.read(hallRepositoryProvider).getHalls();
-  final hallNames = {for (final h in hallsRes.getOrElse(() => [])) h.id: h.name};
+  final hallsRes = await ref.read(hallUseCasesProvider).getHalls();
+  final hallNames = {
+    for (final h in hallsRes.getOrElse(() => [])) h.id: h.name
+  };
 
   final sessionPeriodsRes =
-      await ref.read(sessionRepositoryProvider).getAllSessionPeriods();
+      await ref.read(sessionUseCasesProvider).getAllSessionPeriods();
   final sessionPeriods = sessionPeriodsRes.getOrElse(() => {});
 
-  final periodsRes = await ref.read(hallRepositoryProvider).getAllAccessPeriods();
+  final periodsRes = await ref.read(hallUseCasesProvider).getAllAccessPeriods();
   final periodsById = <int, AccessPeriod>{
     for (final p in periodsRes.getOrElse(() => <AccessPeriod>[])) p.id: p,
   };
@@ -65,7 +71,9 @@ class TrainerSessionDisplay {
   final String hallName;
   final String scheduleText;
   const TrainerSessionDisplay(
-      {required this.session, required this.hallName, required this.scheduleText});
+      {required this.session,
+      required this.hallName,
+      required this.scheduleText});
 }
 
 /// فترات مناوبة المدرب في القاعات (access_periods.trainer_id = هو) عبر كل
@@ -73,13 +81,14 @@ class TrainerSessionDisplay {
 /// دفعة واحدة لكل القاعات) بدل استعلام لكل قاعة على حدة، ثم نُصفّي محليًا
 /// لفترات هذا المدرب فقط.
 final trainerShiftPeriodsProvider =
-    FutureProvider.family<List<TrainerShiftPeriod>, String>((ref, trainerId) async {
-  final periodsRes = await ref.read(hallRepositoryProvider).getAllAccessPeriods();
+    FutureProvider.family<List<TrainerShiftPeriod>, String>(
+        (ref, trainerId) async {
+  final periodsRes = await ref.read(hallUseCasesProvider).getAllAccessPeriods();
   final periods = periodsRes.fold((l) => throw Exception(l.message), (r) => r);
   final mine = periods.where((p) => p.trainerId == trainerId).toList();
   if (mine.isEmpty) return [];
 
-  final hallsRes = await ref.read(hallRepositoryProvider).getHalls();
+  final hallsRes = await ref.read(hallUseCasesProvider).getHalls();
   final hallNames = {
     for (final h in hallsRes.getOrElse(() => [])) h.id: h.name,
   };

@@ -6,6 +6,6 @@ import "../../repositories/i_session_repository.dart";
 class CreateSessionUc {
   final ISessionRepository repository;
   CreateSessionUc(this.repository);
-  Future<Either<Failure, Session>> call(Session s) => repository.createSession(s);
+  Future<Either<Failure, Session>> call(Session s) =>
+      repository.createSession(s);
 }
-

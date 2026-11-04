@@ -4,7 +4,6 @@ import 'package:go_router/go_router.dart';
 import 'package:qr_flutter/qr_flutter.dart';
 import '../../../../core/constants/app_colors.dart';
 import '../../qr_code/controllers/qr_controller.dart';
-import '../../../shared/auth/controllers/auth_controller.dart';
 import '../controllers/trainee_dashboard_controller.dart';
 import '../../../shared/widgets/app_card.dart';
 import '../../../shared/widgets/async_error_view.dart';
@@ -172,12 +171,26 @@ class TraineeDashboardScreen extends ConsumerWidget {
                     decoration: BoxDecoration(
                         color: Colors.white,
                         borderRadius: BorderRadius.circular(16)),
-                    child: QrImageView(
-                        key: ValueKey(ref.watch(qrRefreshProvider)),
-                        data: ref.watch(traineeQrProvider),
-                        version: QrVersions.auto,
-                        size: 160,
-                        backgroundColor: Colors.white),
+                    child: ref.watch(traineeQrProvider).when(
+                          loading: () => const SizedBox(
+                            width: 160,
+                            height: 160,
+                            child: Center(child: CircularProgressIndicator()),
+                          ),
+                          error: (error, _) => SizedBox(
+                            width: 160,
+                            height: 160,
+                            child:
+                                Center(child: Text('تعذر إنشاء الكود: $error')),
+                          ),
+                          data: (qrData) => QrImageView(
+                            key: ValueKey(ref.watch(qrRefreshProvider)),
+                            data: qrData,
+                            version: QrVersions.auto,
+                            size: 160,
+                            backgroundColor: Colors.white,
+                          ),
+                        ),
                   ),
                   const SizedBox(height: 12),
                   Text('اعرض هذا الكود على موظف الاستقبال عند الدخول',
@@ -190,12 +203,6 @@ class TraineeDashboardScreen extends ConsumerWidget {
                       width: double.infinity,
                       child: OutlinedButton.icon(
                           onPressed: () {
-                            // إذا لم يكن الكود جاهزاً بعد (لا يوجد مستخدم محدَّد)
-                            // نعيد جلب بيانات الدخول ثم نولّد الكود من جديد.
-                            if (ref.read(traineeQrProvider) ==
-                                'trainee_pending') {
-                              ref.invalidate(authControllerProvider);
-                            }
                             ref.read(qrRefreshProvider.notifier).state++;
                             ScaffoldMessenger.of(context).showSnackBar(
                               const SnackBar(

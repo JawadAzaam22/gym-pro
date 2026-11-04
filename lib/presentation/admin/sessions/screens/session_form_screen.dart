@@ -94,8 +94,7 @@ class _SessionFormScreenState extends ConsumerState<SessionFormScreen> {
                     child: _HallDropdown(
                       selectedId: _hallId,
                       locked: _selectedPeriods.isNotEmpty,
-                      onChanged: (value) =>
-                          setState(() => _hallId = value),
+                      onChanged: (value) => setState(() => _hallId = value),
                     ),
                   ),
                 ]),
@@ -109,11 +108,12 @@ class _SessionFormScreenState extends ConsumerState<SessionFormScreen> {
                     if (result is List<AccessPeriod> && result.isNotEmpty) {
                       // التحقق أن جميع الفترات لنفس القاعة
                       final firstHallId = result.first.hallId;
-                      final allSameHall = result.every((p) => p.hallId == firstHallId);
+                      final allSameHall =
+                          result.every((p) => p.hallId == firstHallId);
                       if (!allSameHall) {
                         if (mounted) {
-                          AppToast.error(context,
-                              'جميع الفترات يجب أن تكون لنفس القاعة');
+                          AppToast.error(
+                              context, 'جميع الفترات يجب أن تكون لنفس القاعة');
                         }
                         return;
                       }
@@ -157,7 +157,8 @@ class _SessionFormScreenState extends ConsumerState<SessionFormScreen> {
                       children: [
                         Row(
                           children: [
-                            const Icon(Icons.info_outline, size: 14, color: AppColors.info),
+                            const Icon(Icons.info_outline,
+                                size: 14, color: AppColors.info),
                             const SizedBox(width: 6),
                             const Text(
                               'الفترات المحددة:',
@@ -183,21 +184,26 @@ class _SessionFormScreenState extends ConsumerState<SessionFormScreen> {
                               padding: const EdgeInsets.only(bottom: 4),
                               child: Row(
                                 children: [
-                                  const Icon(Icons.circle, size: 6, color: AppColors.primary),
+                                  const Icon(Icons.circle,
+                                      size: 6, color: AppColors.primary),
                                   const SizedBox(width: 8),
                                   Expanded(
                                     child: Text(
                                       '${DayOfWeekHelper.name(p.dayOfWeek)} • ${p.startTime.substring(0, 5)} - ${p.endTime.substring(0, 5)}',
                                       style: const TextStyle(
-                                          color: AppColors.textMuted, fontSize: 11),
+                                          color: AppColors.textMuted,
+                                          fontSize: 11),
                                     ),
                                   ),
                                   GestureDetector(
                                     onTap: () => setState(() {
-                                      _selectedPeriods.removeWhere((rp) => rp.id == p.id);
-                                      if (_selectedPeriods.isEmpty) _hallId = null;
+                                      _selectedPeriods
+                                          .removeWhere((rp) => rp.id == p.id);
+                                      if (_selectedPeriods.isEmpty)
+                                        _hallId = null;
                                     }),
-                                    child: const Icon(Icons.close, size: 14, color: AppColors.error),
+                                    child: const Icon(Icons.close,
+                                        size: 14, color: AppColors.error),
                                   ),
                                 ],
                               ),
@@ -263,7 +269,8 @@ class _SessionFormScreenState extends ConsumerState<SessionFormScreen> {
       return;
     }
     // استخدام أول فترة كـ accessPeriodId للتوافق القديم
-    final firstPeriodId = _selectedPeriods.isNotEmpty ? _selectedPeriods.first.id : null;
+    final firstPeriodId =
+        _selectedPeriods.isNotEmpty ? _selectedPeriods.first.id : null;
     final s = Session(
       id: widget.session?.id ?? 0,
       name: _name.text.trim(),
@@ -292,10 +299,14 @@ class _SessionFormScreenState extends ConsumerState<SessionFormScreen> {
     }
 
     // بعد إنشاء/تعديل الكورس: ربط الفترات المتعددة في session_periods
-    final sessionId = isEdit ? widget.session!.id : ref.read(sessionsControllerProvider).value?.last.id;
+    final sessionId = isEdit
+        ? widget.session!.id
+        : ref.read(sessionsControllerProvider).value?.last.id;
     if (sessionId != null && _selectedPeriods.isNotEmpty) {
       final periodIds = _selectedPeriods.map((p) => p.id).toList();
-      await ref.read(sessionRepositoryProvider).createSessionPeriods(sessionId, periodIds);
+      await ref
+          .read(sessionUseCasesProvider)
+          .createSessionPeriods(sessionId, periodIds);
     }
 
     // مزامنة مدرب الكورس لكل فترة محددة
@@ -311,7 +322,7 @@ class _SessionFormScreenState extends ConsumerState<SessionFormScreen> {
         titleOrReason: period.titleOrReason,
         isActive: period.isActive,
       );
-      await ref.read(hallRepositoryProvider).updateAccessPeriod(updated);
+      await ref.read(hallUseCasesProvider).updateAccessPeriod(updated);
     }
 
     setState(() => _loading = false);
@@ -325,7 +336,8 @@ class _TrainerSearchField extends ConsumerWidget {
   final String? selectedId;
   final ValueChanged<String?> onChanged;
 
-  const _TrainerSearchField({required this.selectedId, required this.onChanged});
+  const _TrainerSearchField(
+      {required this.selectedId, required this.onChanged});
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -351,8 +363,7 @@ class _TrainerSearchField extends ConsumerWidget {
           prefixIcon: Icons.person_outline,
           selectedId: selectedId,
           onSelected: (user) => onChanged(user?.id),
-          validator: (user) =>
-              user == null ? 'اختر المدرب' : null,
+          validator: (user) => user == null ? 'اختر المدرب' : null,
         );
       },
     );
@@ -393,9 +404,8 @@ class _HallDropdown extends ConsumerWidget {
           value: value,
           decoration: InputDecoration(
             labelText: locked ? 'القاعة (مقيّدة بالموعد)' : 'القاعة',
-            prefixIcon: locked
-                ? const Icon(Icons.lock_outline, size: 18)
-                : null,
+            prefixIcon:
+                locked ? const Icon(Icons.lock_outline, size: 18) : null,
           ),
           hint: const Text('اختر القاعة'),
           items: activeHalls

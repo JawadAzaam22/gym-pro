@@ -8,4 +8,3 @@ class GetCurrentUserUc {
   GetCurrentUserUc(this.repository);
   Future<Either<Failure, User?>> call() => repository.getCurrentUser();
 }
-

@@ -49,8 +49,7 @@ class _NotificationsScreenState extends ConsumerState<NotificationsScreen> {
 
   Future<void> _markAsRead(AppNotification n) async {
     if (n.isRead) return;
-    final res =
-        await ref.read(notificationRepositoryProvider).markAsRead(n.id);
+    final res = await ref.read(markNotificationAsReadProvider).call(n.id);
     if (!mounted) return;
     res.fold(
       (f) => AppToast.error(context, f.message),
@@ -69,8 +68,7 @@ class _NotificationsScreenState extends ConsumerState<NotificationsScreen> {
   Future<void> _markAllAsRead() async {
     if (_markingAll) return;
     setState(() => _markingAll = true);
-    final res =
-        await ref.read(notificationRepositoryProvider).markAllAsRead();
+    final res = await ref.read(markAllNotificationsAsReadProvider).call();
     if (!mounted) return;
     setState(() => _markingAll = false);
     res.fold(
@@ -83,8 +81,7 @@ class _NotificationsScreenState extends ConsumerState<NotificationsScreen> {
   }
 
   Future<void> _delete(AppNotification n) async {
-    final res =
-        await ref.read(notificationRepositoryProvider).deleteNotification(n.id);
+    final res = await ref.read(deleteNotificationProvider).call(n.id);
     if (!mounted) return;
     res.fold(
       (f) => AppToast.error(context, f.message),
@@ -116,7 +113,8 @@ class _NotificationsScreenState extends ConsumerState<NotificationsScreen> {
         ],
       ),
       body: async.when(
-        loading: () => const LoadingIndicator(message: 'جاري تحميل الإشعارات...'),
+        loading: () =>
+            const LoadingIndicator(message: 'جاري تحميل الإشعارات...'),
         error: (e, _) => AsyncErrorView(
           error: e,
           message: 'تعذّر تحميل الإشعارات',
@@ -197,8 +195,9 @@ class _NotificationsScreenState extends ConsumerState<NotificationsScreen> {
                               maxLines: 2,
                               overflow: TextOverflow.ellipsis,
                               style: TextStyle(
-                                fontWeight:
-                                    n.isRead ? FontWeight.w600 : FontWeight.w700,
+                                fontWeight: n.isRead
+                                    ? FontWeight.w600
+                                    : FontWeight.w700,
                                 fontSize: 13,
                                 color: AppColors.textPrimary,
                               ),

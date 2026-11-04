@@ -9,4 +9,3 @@ class CreateMembershipUc {
   Future<Either<Failure, Membership>> call(Membership m) =>
       repository.createMembership(m);
 }
-

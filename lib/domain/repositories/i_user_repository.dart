@@ -11,4 +11,6 @@ abstract class IUserRepository {
   Future<Either<Failure, void>> deactivateUser(String id);
   Future<Either<Failure, void>> deleteUser(String id, {bool cascade = false});
   Future<Either<Failure, List<User>>> getUsersByRole(String role);
+  Future<Either<Failure, String>> issueTraineeQrToken();
+  Future<Either<Failure, User>> resolveTraineeQrToken(String token);
 }

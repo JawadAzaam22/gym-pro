@@ -9,14 +9,23 @@ class ProgramBuilderController extends AsyncNotifier<List<TrainingProgram>> {
   @override
   Future<List<TrainingProgram>> build() async {
     final trainerId = ref.read(authControllerProvider).value?.id ?? '';
-    final res = await ref.read(programRepositoryProvider).getProgramsByTrainer(trainerId);
+    final res =
+        await ref.read(programUseCasesProvider).getProgramsByTrainer(trainerId);
     return res.fold((l) => throw Exception(l.message), (r) => r);
   }
 
   Future<bool> create(String name, String traineeId, String? desc) async {
     final trainerId = ref.read(authControllerProvider).value?.id ?? '';
-    final p = TrainingProgram(id: 0, trainerId: trainerId, traineeId: traineeId, name: name, description: desc, startDate: DateTime.now(), isActive: true, createdAt: DateTime.now());
-    final res = await ref.read(programRepositoryProvider).createProgram(p);
+    final p = TrainingProgram(
+        id: 0,
+        trainerId: trainerId,
+        traineeId: traineeId,
+        name: name,
+        description: desc,
+        startDate: DateTime.now(),
+        isActive: true,
+        createdAt: DateTime.now());
+    final res = await ref.read(createTrainingProgramUcProvider).call(p);
     return res.fold((l) {
       state = AsyncValue.error(l.message, StackTrace.current);
       return false;
@@ -27,7 +36,7 @@ class ProgramBuilderController extends AsyncNotifier<List<TrainingProgram>> {
   }
 
   Future<bool> editProgram(TrainingProgram program) async {
-    final res = await ref.read(programRepositoryProvider).updateProgram(program);
+    final res = await ref.read(programUseCasesProvider).updateProgram(program);
     return res.fold((l) {
       state = AsyncValue.error(l.message, StackTrace.current);
       return false;
@@ -39,38 +48,53 @@ class ProgramBuilderController extends AsyncNotifier<List<TrainingProgram>> {
   }
 
   Future<bool> deactivate(int id) async {
-    final res = await ref.read(programRepositoryProvider).deactivateProgram(id);
+    final res = await ref.read(programUseCasesProvider).deactivateProgram(id);
     return res.fold((l) => false, (_) {
       final list = state.value ?? [];
-      state = AsyncValue.data([for (final p in list) p.id == id ? p.copyWith(isActive: false) : p]);
+      state = AsyncValue.data(
+          [for (final p in list) p.id == id ? p.copyWith(isActive: false) : p]);
       return true;
     });
   }
 
   Future<bool> delete(int id) async {
-    final res = await ref.read(programRepositoryProvider).deleteProgram(id);
+    final res = await ref.read(programUseCasesProvider).deleteProgram(id);
     return res.fold(
       (l) {
         state = AsyncValue.error(l.message, StackTrace.current);
         return false;
       },
       (_) {
-        state = AsyncValue.data((state.value ?? []).where((e) => e.id != id).toList());
+        state = AsyncValue.data(
+            (state.value ?? []).where((e) => e.id != id).toList());
         return true;
       },
     );
   }
 }
 
-final programBuilderProvider = AsyncNotifierProvider<ProgramBuilderController, List<TrainingProgram>>(ProgramBuilderController.new);
+final programBuilderProvider =
+    AsyncNotifierProvider<ProgramBuilderController, List<TrainingProgram>>(
+        ProgramBuilderController.new);
 
 /// أيام برنامج معيّن — invalidation بعد الإضافة/الحذف يعيد الجلب تلقائيًا.
-final programDaysProvider = FutureProvider.family<List<ProgramDayModel>, int>((ref, programId) async {
-  return ref.read(programDatasourceProvider).getDays(programId);
+final programDaysProvider =
+    FutureProvider.family<List<ProgramDayModel>, int>((ref, programId) async {
+  final result =
+      await ref.read(programContentUseCasesProvider).getDays(programId);
+  return result.fold(
+    (failure) => throw Exception(failure.message),
+    (days) => days.map(ProgramDayModel.fromEntity).toList(),
+  );
 });
 
 /// تمارين يوم معيّن في برنامج.
-final programExercisesProvider = FutureProvider.family<List<ProgramExerciseModel>, int>((ref, dayId) async {
-  return ref.read(programDatasourceProvider).getExercises(dayId);
+final programExercisesProvider =
+    FutureProvider.family<List<ProgramExerciseModel>, int>((ref, dayId) async {
+  final result =
+      await ref.read(programContentUseCasesProvider).getExercises(dayId);
+  return result.fold(
+    (failure) => throw Exception(failure.message),
+    (exercises) => exercises.map(ProgramExerciseModel.fromEntity).toList(),
+  );
 });
-

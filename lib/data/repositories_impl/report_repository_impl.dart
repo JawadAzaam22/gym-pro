@@ -18,8 +18,8 @@ class ReportRepositoryImpl implements IReportRepository {
     Map<String, dynamic>? data,
   ]) async {
     try {
-      final report =
-          await datasource.generateReport(type, title, description, generatedBy, data);
+      final report = await datasource.generateReport(
+          type, title, description, generatedBy, data);
       return Right(report.toEntity());
     } on ServerException catch (e) {
       return Left(ServerFailure(e.message));

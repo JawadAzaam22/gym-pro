@@ -6,6 +6,7 @@ import '../../../../core/constants/enums.dart';
 import '../../../../core/errors/failures.dart';
 import '../../../../data/providers.dart';
 import '../../../../domain/entities/attendance.dart';
+import '../../../../domain/entities/qr_check_in.dart';
 import '../../../../domain/entities/user.dart';
 
 class CheckinController extends AsyncNotifier<List<Attendance>> {
@@ -16,9 +17,10 @@ class CheckinController extends AsyncNotifier<List<Attendance>> {
     final now = DateTime.now();
     final todayStart = DateTime(now.year, now.month, now.day);
     final todayEnd = todayStart.add(const Duration(days: 1));
-    final res = await ref
-        .read(attendanceRepositoryProvider)
-        .getAllAttendance(from: todayStart, to: todayEnd);
+    final res = await ref.read(getAllAttendanceProvider).call(
+          from: todayStart,
+          to: todayEnd,
+        );
     return res.fold((l) => throw Exception(l.message), (r) => r);
   }
 
@@ -36,9 +38,11 @@ class CheckinController extends AsyncNotifier<List<Attendance>> {
           const ValidationFailure('جاري تسجيل حضور المتدرب، انتظر قليلاً'));
     }
     try {
-      final res = await ref
-          .read(attendanceRepositoryProvider)
-          .recordAttendance(traineeId, method, sessionId: sessionId);
+      final res = await ref.read(recordAttendanceProvider).call(
+            traineeId: traineeId,
+            method: method,
+            sessionId: sessionId,
+          );
       return res.fold(
         (l) {
           state = AsyncValue.error(l.message, StackTrace.current);
@@ -53,6 +57,31 @@ class CheckinController extends AsyncNotifier<List<Attendance>> {
       _inFlightTrainees.remove(traineeId);
     }
   }
+
+  /// Single-use QR check-in. The token is consumed by the database in the same
+  /// transaction that records attendance, so a scanned code cannot be replayed.
+  Future<Either<Failure, QrCheckIn>> checkinByQr(String rawCode) async {
+    final token = rawCode.trim();
+    if (!_inFlightTrainees.add(token)) {
+      return Left(
+          const ValidationFailure('جاري تسجيل حضور المتدرب، انتظر قليلاً'));
+    }
+    try {
+      final res = await ref.read(checkInByQrCodeProvider).call(token);
+      return res.fold(
+        (l) {
+          state = AsyncValue.error(l.message, StackTrace.current);
+          return Left(l);
+        },
+        (r) {
+          state = AsyncValue.data([...state.value ?? [], r.attendance]);
+          return Right(r);
+        },
+      );
+    } finally {
+      _inFlightTrainees.remove(token);
+    }
+  }
 }
 
 final checkinControllerProvider =
@@ -62,7 +91,7 @@ final checkinControllerProvider =
 final receptionTraineesProvider = FutureProvider<List<User>>((ref) async {
   try {
     final res = await ref
-        .read(userRepositoryProvider)
+        .read(userUseCasesProvider)
         .getAllUsers()
         .timeout(const Duration(seconds: 15));
     return res.fold(

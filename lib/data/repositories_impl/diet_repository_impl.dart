@@ -76,7 +76,8 @@ class DietRepositoryImpl implements IDietRepository {
   }
 
   @override
-  Future<Either<Failure, List<Diet>>> getDietsByTrainee(String traineeId) async {
+  Future<Either<Failure, List<Diet>>> getDietsByTrainee(
+      String traineeId) async {
     try {
       final list = await datasource.getDietsByTrainee(traineeId);
       return Right(list.map((e) => e.toEntity()).toList());
@@ -88,7 +89,8 @@ class DietRepositoryImpl implements IDietRepository {
   }
 
   @override
-  Future<Either<Failure, List<Diet>>> getDietsByTrainer(String trainerId) async {
+  Future<Either<Failure, List<Diet>>> getDietsByTrainer(
+      String trainerId) async {
     try {
       final list = await datasource.getDietsByTrainer(trainerId);
       return Right(list.map((e) => e.toEntity()).toList());
@@ -155,6 +157,31 @@ class DietRepositoryImpl implements IDietRepository {
     try {
       final list = await datasource.getMeals(dayId);
       return Right(list.map((e) => e.toEntity()).toList());
+    } on ServerException catch (e) {
+      return Left(ServerFailure(e.message));
+    } catch (e) {
+      return Left(ServerFailure(e.toString()));
+    }
+  }
+
+  @override
+  Future<Either<Failure, void>> deleteMeal(int id) async {
+    try {
+      await datasource.deleteMeal(id);
+      return const Right(null);
+    } on ServerException catch (e) {
+      return Left(ServerFailure(e.message));
+    } catch (e) {
+      return Left(ServerFailure(e.toString()));
+    }
+  }
+
+  @override
+  Future<Either<Failure, DietMeal>> updateMeal(DietMeal meal) async {
+    try {
+      final updated =
+          await datasource.updateMeal(DietMealModel.fromEntity(meal));
+      return Right(updated.toEntity());
     } on ServerException catch (e) {
       return Left(ServerFailure(e.message));
     } catch (e) {

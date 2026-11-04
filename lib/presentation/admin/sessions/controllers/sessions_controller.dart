@@ -5,12 +5,12 @@ import '../../../../domain/entities/session.dart';
 class SessionsController extends AsyncNotifier<List<Session>> {
   @override
   Future<List<Session>> build() async {
-    final res = await ref.read(sessionRepositoryProvider).getSessions();
+    final res = await ref.read(sessionUseCasesProvider).getSessions();
     return res.fold((l) => throw Exception(l.message), (r) => r);
   }
 
   Future<bool> create(Session s) async {
-    final res = await ref.read(sessionRepositoryProvider).createSession(s);
+    final res = await ref.read(sessionUseCasesProvider).createSession(s);
     return res.fold((l) {
       state = AsyncValue.error(l.message, StackTrace.current);
       return false;
@@ -21,7 +21,7 @@ class SessionsController extends AsyncNotifier<List<Session>> {
   }
 
   Future<bool> editSession(Session s) async {
-    final res = await ref.read(sessionRepositoryProvider).updateSession(s);
+    final res = await ref.read(sessionUseCasesProvider).updateSession(s);
     return res.fold((l) {
       state = AsyncValue.error(l.message, StackTrace.current);
       return false;
@@ -33,26 +33,30 @@ class SessionsController extends AsyncNotifier<List<Session>> {
   }
 
   Future<void> cancel(int id) async {
-    final res = await ref.read(sessionRepositoryProvider).cancelSession(id);
+    final res = await ref.read(sessionUseCasesProvider).cancelSession(id);
     res.fold(
       (l) => state = AsyncValue.error(l.message, StackTrace.current),
-      (_) => state = AsyncValue.data((state.value ?? []).where((e) => e.id != id).toList()),
+      (_) => state = AsyncValue.data(
+          (state.value ?? []).where((e) => e.id != id).toList()),
     );
   }
 
   Future<bool> delete(int id) async {
-    final res = await ref.read(sessionRepositoryProvider).deleteSession(id);
+    final res = await ref.read(sessionUseCasesProvider).deleteSession(id);
     return res.fold(
       (l) {
         state = AsyncValue.error(l.message, StackTrace.current);
         return false;
       },
       (_) {
-        state = AsyncValue.data((state.value ?? []).where((e) => e.id != id).toList());
+        state = AsyncValue.data(
+            (state.value ?? []).where((e) => e.id != id).toList());
         return true;
       },
     );
   }
 }
 
-final sessionsControllerProvider = AsyncNotifierProvider<SessionsController, List<Session>>(SessionsController.new);
+final sessionsControllerProvider =
+    AsyncNotifierProvider<SessionsController, List<Session>>(
+        SessionsController.new);

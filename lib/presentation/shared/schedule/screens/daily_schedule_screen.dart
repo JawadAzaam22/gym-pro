@@ -97,10 +97,11 @@ class _DailyScheduleScreenState extends ConsumerState<DailyScheduleScreen> {
                       value: 'toggle',
                       child: Row(
                         children: [
-                          Icon(_isMultiSelectMode
-                              ? Icons.close
-                              : Icons.checklist,
-                          size: 18),
+                          Icon(
+                              _isMultiSelectMode
+                                  ? Icons.close
+                                  : Icons.checklist,
+                              size: 18),
                           const SizedBox(width: 8),
                           Text(_isMultiSelectMode
                               ? 'إلغاء التحديد المتعدد'
@@ -326,7 +327,8 @@ class _DailyScheduleScreenState extends ConsumerState<DailyScheduleScreen> {
                   const SizedBox(height: 4),
                   Text(
                     '${_selectedPeriodIds.length} فترات سيتم تحديثها',
-                    style: const TextStyle(color: AppColors.textMuted, fontSize: 12),
+                    style: const TextStyle(
+                        color: AppColors.textMuted, fontSize: 12),
                   ),
                   const SizedBox(height: 16),
                   UserSearchField(
@@ -364,7 +366,8 @@ class _DailyScheduleScreenState extends ConsumerState<DailyScheduleScreen> {
                               return;
                             }
                             Navigator.pop(ctx);
-                            await _assignTrainerToSelectedPeriods(selectedTrainerId!);
+                            await _assignTrainerToSelectedPeriods(
+                                selectedTrainerId!);
                           },
                         ),
                       ),
@@ -426,7 +429,8 @@ class _DailyScheduleScreenState extends ConsumerState<DailyScheduleScreen> {
                   const SizedBox(height: 4),
                   Text(
                     '${_selectedPeriodIds.length} فترات سيتم تحديثها',
-                    style: const TextStyle(color: AppColors.textMuted, fontSize: 12),
+                    style: const TextStyle(
+                        color: AppColors.textMuted, fontSize: 12),
                   ),
                   const SizedBox(height: 16),
                   DropdownButtonFormField<AccessType>(
@@ -470,7 +474,8 @@ class _DailyScheduleScreenState extends ConsumerState<DailyScheduleScreen> {
                               return;
                             }
                             Navigator.pop(ctx);
-                            await _changeAccessTypeForSelectedPeriods(selectedType!);
+                            await _changeAccessTypeForSelectedPeriods(
+                                selectedType!);
                           },
                         ),
                       ),
@@ -524,7 +529,7 @@ class _DailyScheduleScreenState extends ConsumerState<DailyScheduleScreen> {
     if (selectedPeriods.isEmpty) return;
 
     try {
-      final repo = ref.read(hallRepositoryProvider);
+      final repo = ref.read(hallUseCasesProvider);
       final futures = selectedPeriods.map((period) {
         final updated = AccessPeriod(
           id: period.id,
@@ -573,7 +578,7 @@ class _DailyScheduleScreenState extends ConsumerState<DailyScheduleScreen> {
     if (selectedPeriods.isEmpty) return;
 
     try {
-      final repo = ref.read(hallRepositoryProvider);
+      final repo = ref.read(hallUseCasesProvider);
       for (final period in selectedPeriods) {
         await repo.deleteAccessPeriod(period.id);
       }
@@ -660,7 +665,7 @@ class _DailyScheduleScreenState extends ConsumerState<DailyScheduleScreen> {
     if (selectedPeriods.isEmpty) return;
 
     try {
-      final repo = ref.read(hallRepositoryProvider);
+      final repo = ref.read(hallUseCasesProvider);
       final futures = selectedPeriods.map((period) {
         final updated = AccessPeriod(
           id: period.id,
@@ -837,71 +842,71 @@ class _DailyScheduleScreenState extends ConsumerState<DailyScheduleScreen> {
 
   Widget _buildGridColumn(List<_TimeSlot> timeSlots) {
     return Column(
-        children: [
-          Container(
-            padding: const EdgeInsets.symmetric(vertical: 8),
-            child: Row(
-              children: [
-                  const SizedBox(
+      children: [
+        Container(
+          padding: const EdgeInsets.symmetric(vertical: 8),
+          child: Row(
+            children: [
+              const SizedBox(
+                  width: 80,
+                  child: Center(
+                      child: Text('الوقت',
+                          style: TextStyle(
+                              color: AppColors.textMuted,
+                              fontSize: 11,
+                              fontWeight: FontWeight.w700)))),
+              for (int day = 0; day < 7; day++)
+                SizedBox(
+                  width: 140,
+                  child: Center(
+                    child: Text(DayOfWeekHelper.name(day),
+                        style: const TextStyle(
+                            color: AppColors.textPrimary,
+                            fontSize: 12,
+                            fontWeight: FontWeight.w700)),
+                  ),
+                ),
+            ],
+          ),
+        ),
+        const Divider(height: 1, color: AppColors.border),
+        Expanded(
+          child: ListView.builder(
+            itemCount: timeSlots.length,
+            itemBuilder: (_, rowIdx) {
+              final slot = timeSlots[rowIdx];
+              return Container(
+                constraints: const BoxConstraints(minHeight: 56),
+                decoration: BoxDecoration(
+                  color: rowIdx.isEven
+                      ? AppColors.surfaceLow.withOpacity(0.3)
+                      : Colors.transparent,
+                ),
+                child: Row(
+                  children: [
+                    SizedBox(
                       width: 80,
                       child: Center(
-                          child: Text('الوقت',
-                              style: TextStyle(
-                                  color: AppColors.textMuted,
-                                  fontSize: 11,
-                                  fontWeight: FontWeight.w700)))),
-                  for (int day = 0; day < 7; day++)
-                    SizedBox(
-                      width: 140,
-                      child: Center(
-                        child: Text(DayOfWeekHelper.name(day),
-                            style: const TextStyle(
-                                color: AppColors.textPrimary,
-                                fontSize: 12,
-                                fontWeight: FontWeight.w700)),
+                        child: Text(
+                          '${slot.startTime.substring(0, 5)}\n${slot.endTime.substring(0, 5)}',
+                          textAlign: TextAlign.center,
+                          style: const TextStyle(
+                              color: AppColors.textMuted,
+                              fontSize: 10,
+                              fontWeight: FontWeight.w600),
+                        ),
                       ),
                     ),
-                ],
-              ),
-            ),
-            const Divider(height: 1, color: AppColors.border),
-            Expanded(
-              child: ListView.builder(
-                itemCount: timeSlots.length,
-                itemBuilder: (_, rowIdx) {
-                  final slot = timeSlots[rowIdx];
-                  return Container(
-                    constraints: const BoxConstraints(minHeight: 56),
-                    decoration: BoxDecoration(
-                      color: rowIdx.isEven
-                          ? AppColors.surfaceLow.withOpacity(0.3)
-                          : Colors.transparent,
-                    ),
-                    child: Row(
-                      children: [
-                        SizedBox(
-                          width: 80,
-                          child: Center(
-                            child: Text(
-                              '${slot.startTime.substring(0, 5)}\n${slot.endTime.substring(0, 5)}',
-                              textAlign: TextAlign.center,
-                              style: const TextStyle(
-                                  color: AppColors.textMuted,
-                                  fontSize: 10,
-                                  fontWeight: FontWeight.w600),
-                            ),
-                          ),
-                        ),
-                        for (int day = 0; day < 7; day++)
-                          _buildWebCell(slot.cellsByDay[day], day),
-                      ],
-                    ),
-                  );
-                },
-              ),
-            ),
-          ],
-        );
+                    for (int day = 0; day < 7; day++)
+                      _buildWebCell(slot.cellsByDay[day], day),
+                  ],
+                ),
+              );
+            },
+          ),
+        ),
+      ],
+    );
   }
 
   Widget _buildWebCell(_ScheduleCell? cell, int day) {
@@ -1710,7 +1715,7 @@ class _DailyScheduleScreenState extends ConsumerState<DailyScheduleScreen> {
                             ? null
                             : () async {
                                 setSheetState(() => loading = true);
-                                final repo = ref.read(hallRepositoryProvider);
+                                final repo = ref.read(hallUseCasesProvider);
                                 final res = await repo.createAccessPeriod(
                                   AccessPeriod(
                                     id: 0,

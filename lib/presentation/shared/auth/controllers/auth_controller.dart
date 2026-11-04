@@ -25,8 +25,7 @@ import '../../notifications/controllers/notifications_controller.dart';
 class AuthController extends AsyncNotifier<User?> {
   @override
   Future<User?> build() async {
-    final repo = ref.read(authRepositoryProvider);
-    final res = await repo.getCurrentUser();
+    final res = await ref.read(getCurrentUserUcProvider).call();
     return res.fold((l) => null, (r) => r);
   }
 
@@ -41,8 +40,8 @@ class AuthController extends AsyncNotifier<User?> {
     ref.invalidate(traineePrivateSessionsProvider);
     ref.invalidate(myTrainerProvider);
     // traineeQrProvider غير مُدرج هنا عمداً: قيمته مشتقة تفاعلياً من
-    // currentUserIdProvider، وإبطالها من داخل AuthController يسبب
-    // CircularDependencyError (QR يعود trainee_pending تلقائياً عند الخروج).
+    // QR provider is derived from the authenticated user and is refreshed
+    // independently to avoid a circular dependency.
     ref.invalidate(qrRefreshProvider);
 
     // Trainer-specific providers
@@ -78,8 +77,7 @@ class AuthController extends AsyncNotifier<User?> {
 
   Future<bool> login(String email, String password, {required AppEntry entry}) async {
     state = const AsyncValue.loading();
-    final repo = ref.read(authRepositoryProvider);
-    final result = await repo.login(email, password);
+    final result = await ref.read(loginUcProvider).call(email, password);
     return await result.fold(
       (failure) async {
         state = AsyncValue.error(failure.message, StackTrace.current);
@@ -90,7 +88,7 @@ class AuthController extends AsyncNotifier<User?> {
           // مهم: signInWithPassword نجح وأنشأ جلسة Supabase — يجب إبطالها
           // وإلا بقيت الجلسة نشطة وسيُعتبر المستخدم مسجلًا عند إعادة التشغيل
           try {
-            await repo.logout();
+            await ref.read(logoutUcProvider).call();
           } catch (_) {}
           final msg = RoleGuard.errorMessage(user.role, entry);
           state = AsyncValue.error(msg, StackTrace.current);
@@ -109,8 +107,7 @@ class AuthController extends AsyncNotifier<User?> {
   /// تسجيل دخول بدون فصل (للتوافق)
   Future<bool> loginSimple(String email, String password) async {
     state = const AsyncValue.loading();
-    final repo = ref.read(authRepositoryProvider);
-    final result = await repo.login(email, password);
+    final result = await ref.read(loginUcProvider).call(email, password);
     return result.fold(
       (failure) {
         state = AsyncValue.error(failure.message, StackTrace.current);
@@ -126,8 +123,7 @@ class AuthController extends AsyncNotifier<User?> {
   }
 
   Future<void> logout() async {
-    final repo = ref.read(authRepositoryProvider);
-    await repo.logout();
+    await ref.read(logoutUcProvider).call();
     SessionRoleCache.invalidate();
     // إلغاء أي تنبيهات محلية مجدولة — تجنب بقاء تذكيرات المستخدم القديم
     // على جهاز مشترك. (الخدمة تبتلع كل الأخطاء داخلياً.)

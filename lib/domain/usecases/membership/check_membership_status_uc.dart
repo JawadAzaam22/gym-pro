@@ -9,4 +9,3 @@ class CheckMembershipStatusUc {
   Future<Either<Failure, Membership>> call(String traineeId) =>
       repository.checkStatus(traineeId);
 }
-
