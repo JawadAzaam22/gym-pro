@@ -14,7 +14,7 @@ dependencies:
   flutter_riverpod: ^2.5.0
 
   # Backend
-  supabase_flutter: ^2.5.0
+  supabase_flutter: ^2.18.3
 
   # Navigation
   go_router: ^14.0.0
