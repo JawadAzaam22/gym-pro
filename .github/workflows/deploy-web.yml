@@ -1,0 +1,93 @@
+name: Deploy web apps (GitHub Pages)
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - "lib/**"
+      - "web/**"
+      - "pubspec.yaml"
+      - "pubspec.lock"
+      - ".github/workflows/deploy-web.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: pages
+  cancel-in-progress: false
+
+env:
+  FLUTTER_VERSION: 3.24.5
+
+jobs:
+  build:
+    name: Build admin and reception
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    env:
+      SUPABASE_URL: ${{ vars.SUPABASE_URL }}
+      SUPABASE_ANON_KEY: ${{ vars.SUPABASE_ANON_KEY }}
+      REPO: ${{ github.event.repository.name }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: subosito/flutter-action@v2
+        with:
+          flutter-version: ${{ env.FLUTTER_VERSION }}
+          channel: stable
+          cache: true
+
+      - name: Check configuration
+        run: |
+          [ -n "$SUPABASE_URL" ] || { echo "::error::Repository variable SUPABASE_URL is not set"; exit 1; }
+          [ -n "$SUPABASE_ANON_KEY" ] || { echo "::error::Repository variable SUPABASE_ANON_KEY is not set"; exit 1; }
+
+      # The anon/publishable key is public by design. Never use service_role here.
+      - name: Write .env
+        run: printf 'SUPABASE_URL=%s\nSUPABASE_ANON_KEY=%s\n' "$SUPABASE_URL" "$SUPABASE_ANON_KEY" > .env
+
+      - run: flutter pub get
+
+      - name: Build admin
+        run: |
+          flutter build web --release -t lib/main_admin.dart --base-href "/${REPO}/admin/"
+          mkdir -p site/admin && cp -r build/web/. site/admin/
+
+      - name: Build reception
+        run: |
+          flutter build web --release -t lib/main_reception.dart --base-href "/${REPO}/reception/"
+          mkdir -p site/reception && cp -r build/web/. site/reception/
+
+      - name: Landing page
+        run: |
+          touch site/.nojekyll
+          cat > site/index.html <<'HTML'
+          <!doctype html>
+          <html lang="en"><head><meta charset="utf-8">
+          <meta name="viewport" content="width=device-width, initial-scale=1">
+          <title>Gym Pro</title>
+          <style>body{font-family:system-ui,sans-serif;background:#0f1115;color:#e8e8e8;display:grid;place-items:center;min-height:100vh;margin:0}
+          main{text-align:center}a{display:inline-block;margin:.5rem;padding:.8rem 1.6rem;border-radius:12px;background:#1f2430;color:#fff;text-decoration:none}</style>
+          </head><body><main><h1>Gym Pro</h1>
+          <a href="./admin/">Admin</a><a href="./reception/">Reception</a></main></body></html>
+          HTML
+
+      - uses: actions/configure-pages@v5
+      - uses: actions/upload-pages-artifact@v3
+        with:
+          path: site
+
+  deploy:
+    name: Publish
+    needs: build
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - id: deployment
+        uses: actions/deploy-pages@v4

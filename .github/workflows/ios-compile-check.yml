@@ -1,0 +1,33 @@
+name: iOS compile check
+
+# Verifies that the iOS target still compiles. The result is unsigned and is
+# NOT distributable: installing on devices needs an Apple Developer account.
+on:
+  workflow_dispatch:
+  push:
+    tags: ["v*"]
+
+permissions:
+  contents: read
+
+jobs:
+  ios:
+    name: Compile (no code signing)
+    runs-on: macos-latest
+    timeout-minutes: 45
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Check iOS project
+        run: '[ -d ios ] || { echo "::error::ios/ folder is missing from the repository"; exit 1; }'
+
+      - uses: subosito/flutter-action@v2
+        with:
+          flutter-version: 3.24.5
+          channel: stable
+          cache: true
+
+      - run: cp .env.example .env
+      - run: flutter pub get
+      - name: Build (no codesign)
+        run: flutter build ios --release --no-codesign -t lib/main_mobile.dart

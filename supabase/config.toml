@@ -1,4 +1,8 @@
-# Gym Pro — Supabase CLI config (relevant parts only)
+# Gym Pro — Supabase CLI configuration (used by `supabase start` locally and in CI)
+project_id = "gym-pro"
+
+[db]
+major_version = 17
 
 # Users are created only through the create-user Edge Function.
 [auth]

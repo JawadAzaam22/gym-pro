@@ -5,6 +5,7 @@ memberships, payments, scheduling, bookings, attendance with single-use QR
 check-in, training programs, diet plans and real-time notifications, for four
 roles across three apps.
 
+[![CI](https://github.com/JawadAzaam22/gym-pro/actions/workflows/ci.yml/badge.svg)](https://github.com/JawadAzaam22/gym-pro/actions/workflows/ci.yml)
 ![Flutter](https://img.shields.io/badge/Flutter-3.24.x-02569B?logo=flutter)
 ![Dart](https://img.shields.io/badge/Dart-3.5-0175C2?logo=dart)
 ![Supabase](https://img.shields.io/badge/Backend-Supabase-3ECF8E?logo=supabase)
@@ -27,6 +28,7 @@ roles across three apps.
 [Getting started](#getting-started) ·
 [Existing projects](#applying-the-migrations-to-an-existing-project) ·
 [Testing](#testing) ·
+[CI/CD](#cicd) ·
 [Repository layout](#repository-layout) ·
 [License](#license)
 
@@ -329,9 +331,57 @@ Flutter tests:
 - booking the last seat twice concurrently → `SESSION_FULL`;
 - a non-admin updating their own `role`, `is_active` or `email` is rejected.
 
+## CI/CD
+
+Everything runs on GitHub Actions and uses free tiers only.
+
+| Workflow | Trigger | What it does |
+|---|---|---|
+| **CI** (`ci.yml`) | every pull request and push to `main` | secret scan (gitleaks) · format, analyze and custom lint · unit and widget tests with coverage · release builds of both web apps · Android debug build · applies **all migrations to an empty Supabase stack** and runs the SQL integration tests · type-checks the Edge Functions · reports one status, **CI passed** |
+| **Deploy web apps** (`deploy-web.yml`) | push to `main` that touches the app, or manual | builds the admin and reception apps and publishes them to GitHub Pages under `/admin/` and `/reception/` |
+| **Deploy backend** (`deploy-backend.yml`) | manual, from `main`, requires typing `DEPLOY` | `supabase db push --dry-run`, `db push`, then deploys `create-user` and `delete-user` to the chosen environment (`staging` or `production`) |
+| **Release Android APK** (`release-android.yml`) | tag `v*` or manual | builds a signed release APK and attaches it, with its SHA-256, to a GitHub Release |
+| **iOS compile check** (`ios-compile-check.yml`) | tag `v*` or manual | verifies the iOS target compiles without code signing |
+
+**Database tests.** `supabase/tests/database/` holds SQL integration tests that
+run inside a transaction that is always rolled back. They cover the new-user
+trigger, protected profile columns, anonymous access, manual and QR attendance
+(including single-use tokens), booking capacity and deactivated users. Run them
+locally with:
+
+```bash
+supabase start
+psql "postgresql://postgres:postgres@127.0.0.1:54322/postgres" \
+  -v ON_ERROR_STOP=1 -f supabase/tests/database/01_security_and_attendance.test.sql
+```
+
+**Configuration.**
+
+| Where | Name | Purpose |
+|---|---|---|
+| Repository variables | `SUPABASE_URL`, `SUPABASE_ANON_KEY` | public values written to `.env` for web and Android builds |
+| Environment `production` / `staging` — secrets | `SUPABASE_ACCESS_TOKEN`, `SUPABASE_DB_PASSWORD` | backend deployment |
+| Environment `production` / `staging` — variable | `SUPABASE_PROJECT_REF` | target Supabase project |
+| Repository secrets | `ANDROID_KEYSTORE_BASE64`, `ANDROID_KEYSTORE_PASSWORD`, `ANDROID_KEY_PASSWORD`, `ANDROID_KEY_ALIAS` | Android release signing |
+
+**Releasing.** Merge to `main` (web apps deploy automatically), run
+**Deploy backend** if the change includes migrations or Edge Functions, then tag:
+
+```bash
+git tag v1.0.0 && git push origin v1.0.0
+```
+
+The Android APK is distributed through GitHub Releases for direct installation.
+iOS builds are compiled in CI but not distributed, because installing on devices
+requires an Apple Developer Program membership.
+
+Dependencies and Actions versions are kept current by Dependabot
+(`.github/dependabot.yml`); pull requests use `.github/PULL_REQUEST_TEMPLATE.md`.
+
 ## Repository layout
 
 ```text
+.github/          workflows, Dependabot, pull-request template
 lib/
   core/            bootstrap, theme, errors, constants, notifications
   domain/          entities, repository contracts, use cases
@@ -342,6 +392,7 @@ supabase/
   migrations/      6 ordered SQL files
   functions/       create-user, delete-user
   setup/           full_setup_new_project.sql (SQL-editor setup for a NEW project only)
+  tests/database/  SQL integration tests (run in CI)
   config.toml
 screenshots/       PNG files used by this README
 test/              domain, models, providers, screens
