@@ -11,7 +11,8 @@ abstract class ISessionRepository {
   Future<Either<Failure, void>> deleteSession(int id);
   Future<Either<Failure, List<Session>>> getSessionsByTrainer(String trainerId);
   Future<Either<Failure, List<Session>>> getSessionsByHall(int hallId);
-  Future<Either<Failure, void>> createSessionPeriods(int sessionId, List<int> accessPeriodIds);
+  Future<Either<Failure, void>> createSessionPeriods(
+      int sessionId, List<int> accessPeriodIds);
   Future<Either<Failure, Map<int, Set<int>>>> getAllSessionPeriods();
   Future<Either<Failure, Set<int>>> getSessionPeriods(int sessionId);
 }

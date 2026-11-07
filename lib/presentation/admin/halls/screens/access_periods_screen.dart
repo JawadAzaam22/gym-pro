@@ -32,8 +32,8 @@ class AccessPeriodsScreen extends ConsumerWidget {
     final periodsAsync = ref.watch(accessPeriodsProvider(hallId));
     final usersAsync = ref.watch(usersControllerProvider);
     final trainerNames = {
-      for (final u in (usersAsync.value ?? [])
-          .where((u) => u.role == UserRole.trainer))
+      for (final u
+          in (usersAsync.value ?? []).where((u) => u.role == UserRole.trainer))
         u.id: u.name,
     };
 
@@ -58,7 +58,8 @@ class AccessPeriodsScreen extends ConsumerWidget {
                 Expanded(
                   child: Text(
                     'الفترات تُولَّد تلقائيًا (ساعة واحدة) من ساعات عمل القاعة. لتغيير الأوقات عدّل القاعة من شاشة "القاعات".',
-                    style: TextStyle(color: AppColors.textSecondary, fontSize: 11),
+                    style:
+                        TextStyle(color: AppColors.textSecondary, fontSize: 11),
                   ),
                 ),
               ],
@@ -79,8 +80,7 @@ class AccessPeriodsScreen extends ConsumerWidget {
                           textAlign: TextAlign.center,
                           style: TextStyle(color: AppColors.textMuted)));
                 }
-                final sorted = [...list]
-                  ..sort((a, b) {
+                final sorted = [...list]..sort((a, b) {
                     final d = a.dayOfWeek.compareTo(b.dayOfWeek);
                     return d != 0 ? d : a.startTime.compareTo(b.startTime);
                   });
@@ -111,7 +111,8 @@ class AccessPeriodsScreen extends ConsumerWidget {
                             child: Column(
                                 crossAxisAlignment: CrossAxisAlignment.start,
                                 children: [
-                              Text('${p.startTime.substring(0, 5)} - ${p.endTime.substring(0, 5)}',
+                              Text(
+                                  '${p.startTime.substring(0, 5)} - ${p.endTime.substring(0, 5)}',
                                   style: const TextStyle(
                                       color: AppColors.textPrimary,
                                       fontSize: 13,
@@ -223,8 +224,8 @@ class AccessPeriodsScreen extends ConsumerWidget {
     );
   }
 
-  Future<void> _saveTrainer(BuildContext context, WidgetRef ref,
-      AccessPeriod p, String? trainerId) async {
+  Future<void> _saveTrainer(BuildContext context, WidgetRef ref, AccessPeriod p,
+      String? trainerId) async {
     final updated = AccessPeriod(
       id: p.id,
       hallId: p.hallId,
@@ -237,7 +238,7 @@ class AccessPeriodsScreen extends ConsumerWidget {
       isActive: p.isActive,
     );
     final res =
-        await ref.read(hallRepositoryProvider).updateAccessPeriod(updated);
+        await ref.read(hallUseCasesProvider).updateAccessPeriod(updated);
     if (!context.mounted) return;
     res.fold(
       (l) => AppToast.error(context, l.message),
@@ -263,9 +264,8 @@ class AccessPeriodsScreen extends ConsumerWidget {
             style: ElevatedButton.styleFrom(backgroundColor: AppColors.error),
             onPressed: () async {
               Navigator.pop(ctx);
-              final res = await ref
-                  .read(hallRepositoryProvider)
-                  .deleteAccessPeriod(p.id);
+              final res =
+                  await ref.read(hallUseCasesProvider).deleteAccessPeriod(p.id);
               if (!context.mounted) return;
               res.fold(
                 (l) => AppToast.error(context, l.message),

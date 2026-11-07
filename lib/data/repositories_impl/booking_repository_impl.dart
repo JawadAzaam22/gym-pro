@@ -16,7 +16,8 @@ class BookingRepositoryImpl implements IBookingRepository {
   BookingRepositoryImpl(this.datasource);
 
   @override
-  Future<Either<Failure, List<Booking>>> getBookingsBySession(int sessionId) async {
+  Future<Either<Failure, List<Booking>>> getBookingsBySession(
+      int sessionId) async {
     try {
       final list = await datasource.getBookingsBySession(sessionId);
       return Right(list.map((e) => e.toEntity()).toList());
@@ -28,7 +29,8 @@ class BookingRepositoryImpl implements IBookingRepository {
   }
 
   @override
-  Future<Either<Failure, List<Booking>>> getBookingsByTrainee(String traineeId) async {
+  Future<Either<Failure, List<Booking>>> getBookingsByTrainee(
+      String traineeId) async {
     try {
       final list = await datasource.getBookingsByTrainee(traineeId);
       return Right(list.map((e) => e.toEntity()).toList());
@@ -40,7 +42,8 @@ class BookingRepositoryImpl implements IBookingRepository {
   }
 
   @override
-  Future<Either<Failure, Booking>> bookSession(String traineeId, int sessionId) async {
+  Future<Either<Failure, Booking>> bookSession(
+      String traineeId, int sessionId) async {
     try {
       final booking = await datasource.bookSession(traineeId, sessionId);
       return Right(booking.toEntity());
@@ -88,10 +91,12 @@ class BookingRepositoryImpl implements IBookingRepository {
   }
 
   @override
-  Future<Either<Failure, List<Map<String, dynamic>>>> getPrivateSessions() async {
+  Future<Either<Failure, List<PrivateTrainingSession>>> getPrivateSessions(
+      {int? trainerTraineeId}) async {
     try {
-      final list = await datasource.getPrivateSessions();
-      return Right(list.map((e) => e.toJson()).toList());
+      final list = await datasource.getPrivateSessions(
+          trainerTraineeId: trainerTraineeId);
+      return Right(list.map((e) => e.toEntity()).toList());
     } on ServerException catch (e) {
       return Left(ServerFailure(e.message));
     } catch (e) {
@@ -103,8 +108,8 @@ class BookingRepositoryImpl implements IBookingRepository {
   Future<Either<Failure, PrivateTrainingSession>> schedulePrivateSession(
       PrivateTrainingSession session) async {
     try {
-      final created = await datasource
-          .schedulePrivateSession(PrivateTrainingSessionModel.fromEntity(session));
+      final created = await datasource.schedulePrivateSession(
+          PrivateTrainingSessionModel.fromEntity(session));
       return Right(created.toEntity());
     } on ServerException catch (e) {
       return Left(ServerFailure(e.message));
@@ -166,9 +171,11 @@ class BookingRepositoryImpl implements IBookingRepository {
   }
 
   @override
-  Future<Either<Failure, TrainerTrainee>> assignTrainer(String trainerId, String traineeId, String assignedBy) async {
+  Future<Either<Failure, TrainerTrainee>> assignTrainer(
+      String trainerId, String traineeId, String assignedBy) async {
     try {
-      final created = await datasource.assignTrainer(trainerId, traineeId, assignedBy);
+      final created =
+          await datasource.assignTrainer(trainerId, traineeId, assignedBy);
       return Right(created.toEntity());
     } on ServerException catch (e) {
       return Left(ServerFailure(e.message));
@@ -178,9 +185,37 @@ class BookingRepositoryImpl implements IBookingRepository {
   }
 
   @override
-  Future<Either<Failure, List<TrainerTrainee>>> getTrainerTrainees({String? trainerId, String? traineeId}) async {
+  Future<Either<Failure, TrainerTrainee>> changeTrainerAssignment(
+      int assignmentId, String newTrainerId) async {
     try {
-      final list = await datasource.getTrainerTrainees(trainerId: trainerId, traineeId: traineeId);
+      final updated =
+          await datasource.changeTrainerAssignment(assignmentId, newTrainerId);
+      return Right(updated.toEntity());
+    } on ServerException catch (e) {
+      return Left(ServerFailure(e.message));
+    } catch (e) {
+      return Left(ServerFailure(e.toString()));
+    }
+  }
+
+  @override
+  Future<Either<Failure, void>> deactivateTrainerAssignment(int id) async {
+    try {
+      await datasource.deactivateTrainerAssignment(id);
+      return const Right(null);
+    } on ServerException catch (e) {
+      return Left(ServerFailure(e.message));
+    } catch (e) {
+      return Left(ServerFailure(e.toString()));
+    }
+  }
+
+  @override
+  Future<Either<Failure, List<TrainerTrainee>>> getTrainerTrainees(
+      {String? trainerId, String? traineeId}) async {
+    try {
+      final list = await datasource.getTrainerTrainees(
+          trainerId: trainerId, traineeId: traineeId);
       return Right(list.map((e) => e.toEntity()).toList());
     } on ServerException catch (e) {
       return Left(ServerFailure(e.message));
@@ -190,10 +225,11 @@ class BookingRepositoryImpl implements IBookingRepository {
   }
 
   @override
-  Future<Either<Failure, List<PrivateTrainingSchedule>>> getScheduleForTrainerTrainee(
-      int trainerTraineeId) async {
+  Future<Either<Failure, List<PrivateTrainingSchedule>>>
+      getScheduleForTrainerTrainee(int trainerTraineeId) async {
     try {
-      final list = await datasource.getScheduleForTrainerTrainee(trainerTraineeId);
+      final list =
+          await datasource.getScheduleForTrainerTrainee(trainerTraineeId);
       return Right(list.map((e) => e.toEntity()).toList());
     } on ServerException catch (e) {
       return Left(ServerFailure(e.message));
@@ -232,8 +268,8 @@ class BookingRepositoryImpl implements IBookingRepository {
   Future<Either<Failure, PrivateTrainingSchedule>> addScheduleSlot(
       PrivateTrainingSchedule slot) async {
     try {
-      final created = await datasource.addScheduleSlot(
-          PrivateTrainingScheduleModel.fromEntity(slot));
+      final created = await datasource
+          .addScheduleSlot(PrivateTrainingScheduleModel.fromEntity(slot));
       return Right(created.toEntity());
     } on ServerException catch (e) {
       return Left(ServerFailure(e.message));

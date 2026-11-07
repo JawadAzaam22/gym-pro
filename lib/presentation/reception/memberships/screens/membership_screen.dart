@@ -43,7 +43,7 @@ class _MembershipScreenState extends ConsumerState<MembershipScreen> {
     if (traineeId == null) return;
 
     final result = await ref
-        .read(membershipRepositoryProvider)
+        .read(membershipUseCasesProvider)
         .getActiveMembership(traineeId);
 
     if (!mounted || _selectedTraineeId != traineeId) return;
@@ -53,15 +53,16 @@ class _MembershipScreenState extends ConsumerState<MembershipScreen> {
       (membership) {
         if (membership != null) {
           final today = DateTime.now();
-          final normalizedEnd = DateTime(
-              membership.endDate.year, membership.endDate.month, membership.endDate.day);
+          final normalizedEnd = DateTime(membership.endDate.year,
+              membership.endDate.month, membership.endDate.day);
           final normalizedToday = DateTime(today.year, today.month, today.day);
-          
+
           setState(() {
             _currentStatus = membership.status;
             _currentEndDate = membership.endDate;
             _end = normalizedEnd.isAfter(normalizedToday)
-                ? DateTime(normalizedEnd.year, normalizedEnd.month, normalizedEnd.day + 30)
+                ? DateTime(normalizedEnd.year, normalizedEnd.month,
+                    normalizedEnd.day + 30)
                 : DateTime(today.year, today.month, today.day + 30);
           });
         } else {
@@ -150,8 +151,7 @@ class _MembershipScreenState extends ConsumerState<MembershipScreen> {
                   style: const TextStyle(color: AppColors.textSecondary)),
               const SizedBox(height: 4),
             ],
-            Text(
-                'التاريخ الجديد: ${_end.toIso8601String().split('T').first}',
+            Text('التاريخ الجديد: ${_end.toIso8601String().split('T').first}',
                 style: const TextStyle(color: AppColors.textPrimary)),
             const SizedBox(height: 8),
             if (isRenewal) ...[
@@ -206,8 +206,7 @@ class _MembershipScreenState extends ConsumerState<MembershipScreen> {
       if (!mounted) return;
       setState(() => _loading = false);
       result.fold(
-        (failure) =>
-            AppToast.error(context, 'فشل التجديد: ${failure.message}'),
+        (failure) => AppToast.error(context, 'فشل التجديد: ${failure.message}'),
         (_) {
           AppToast.success(context, 'تم التجديد');
           Navigator.pop(context);
@@ -262,14 +261,16 @@ class _MembershipScreenState extends ConsumerState<MembershipScreen> {
 
   Widget _buildMembershipsList(BuildContext context, WidgetRef ref) {
     final membershipsAsync = ref.watch(allMembershipsProvider);
-    
+
     return membershipsAsync.when(
       loading: () => const LoadingIndicator(message: 'جاري تحميل العضويات...'),
       error: (e, _) => AsyncErrorView(
           error: e, onRetry: () => ref.invalidate(allMembershipsProvider)),
       data: (memberships) {
         if (memberships.isEmpty) {
-          return const Center(child: Text('لا توجد عضويات', style: TextStyle(color: AppColors.textMuted)));
+          return const Center(
+              child: Text('لا توجد عضويات',
+                  style: TextStyle(color: AppColors.textMuted)));
         }
         return RefreshIndicator(
           onRefresh: () async => ref.invalidate(allMembershipsProvider),
@@ -281,11 +282,9 @@ class _MembershipScreenState extends ConsumerState<MembershipScreen> {
               final m = memberships[i];
               // نعرض اسم المتدرب واسم المدرب المسؤول عنه بدل الـ id الخام.
               final users = ref.watch(usersControllerProvider).value ?? [];
-              final traineeName = users
-                      .where((u) => u.id == m.traineeId)
-                      .firstOrNull
-                      ?.name ??
-                  'متدرب غير معروف';
+              final traineeName =
+                  users.where((u) => u.id == m.traineeId).firstOrNull?.name ??
+                      'متدرب غير معروف';
               final trainerAsync =
                   ref.watch(traineeCurrentTrainerProvider(m.traineeId));
               final trainerName = trainerAsync.when(
@@ -295,15 +294,21 @@ class _MembershipScreenState extends ConsumerState<MembershipScreen> {
               );
               return AppCard(
                 child: ListTile(
-                  title: Text(traineeName, style: const TextStyle(color: AppColors.textPrimary, fontWeight: FontWeight.w600)),
+                  title: Text(traineeName,
+                      style: const TextStyle(
+                          color: AppColors.textPrimary,
+                          fontWeight: FontWeight.w600)),
                   subtitle: Text(
                       'المدرب: $trainerName\n'
                       '${m.startDate.toIso8601String().split('T').first} → ${m.endDate.toIso8601String().split('T').first} • ${m.status.name}',
-                      style: const TextStyle(color: AppColors.textMuted, fontSize: 11)),
+                      style: const TextStyle(
+                          color: AppColors.textMuted, fontSize: 11)),
                   isThreeLine: true,
                   trailing: IconButton(
-                    icon: const Icon(Icons.delete_forever, color: AppColors.error),
-                    onPressed: () => _confirmDeleteMembership(context, ref, m.id),
+                    icon: const Icon(Icons.delete_forever,
+                        color: AppColors.error),
+                    onPressed: () =>
+                        _confirmDeleteMembership(context, ref, m.id),
                   ),
                 ),
               );
@@ -314,15 +319,20 @@ class _MembershipScreenState extends ConsumerState<MembershipScreen> {
     );
   }
 
-  Future<void> _confirmDeleteMembership(BuildContext context, WidgetRef ref, int id) async {
+  Future<void> _confirmDeleteMembership(
+      BuildContext context, WidgetRef ref, int id) async {
     final confirm = await showDialog<bool>(
       context: context,
       builder: (ctx) => AlertDialog(
         backgroundColor: AppColors.surfaceCard,
-        title: const Text('حذف العضوية نهائياً؟', style: TextStyle(color: AppColors.error)),
-        content: const Text('سيتم حذف الاشتراك. لا يمكن التراجع.', style: TextStyle(color: AppColors.textSecondary)),
+        title: const Text('حذف العضوية نهائياً؟',
+            style: TextStyle(color: AppColors.error)),
+        content: const Text('سيتم حذف الاشتراك. لا يمكن التراجع.',
+            style: TextStyle(color: AppColors.textSecondary)),
         actions: [
-          TextButton(onPressed: () => Navigator.pop(ctx, false), child: const Text('تراجع')),
+          TextButton(
+              onPressed: () => Navigator.pop(ctx, false),
+              child: const Text('تراجع')),
           ElevatedButton(
             onPressed: () => Navigator.pop(ctx, true),
             style: ElevatedButton.styleFrom(backgroundColor: AppColors.error),
@@ -332,16 +342,21 @@ class _MembershipScreenState extends ConsumerState<MembershipScreen> {
       ),
     );
     if (confirm == true) {
-      final ok = await ref.read(membershipRepositoryProvider).deleteMembership(id);
+      final ok =
+          await ref.read(membershipUseCasesProvider).deleteMembership(id);
       if (!context.mounted) return;
       ok.fold(
-        (l) => ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('فشل: ${l.message}'), backgroundColor: AppColors.error)),
-        (_) => ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('تم الحذف'), backgroundColor: AppColors.success)),
+        (l) => ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+            content: Text('فشل: ${l.message}'),
+            backgroundColor: AppColors.error)),
+        (_) => ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
+            content: Text('تم الحذف'), backgroundColor: AppColors.success)),
       );
     }
   }
 
-  Widget _buildCreateRenewForm(BuildContext context, WidgetRef ref, bool isRenewal) {
+  Widget _buildCreateRenewForm(
+      BuildContext context, WidgetRef ref, bool isRenewal) {
     final usersAsync = ref.watch(usersControllerProvider);
     return Padding(
       padding: const EdgeInsets.all(16),
@@ -350,17 +365,17 @@ class _MembershipScreenState extends ConsumerState<MembershipScreen> {
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text(
-              isRenewal ? 'تجديد العضوية' : 'إنشاء عضوية جديدة',
-              style: Theme.of(context).textTheme.titleLarge),
+            Text(isRenewal ? 'تجديد العضوية' : 'إنشاء عضوية جديدة',
+                style: Theme.of(context).textTheme.titleLarge),
             const SizedBox(height: 4),
             Text(
-              isRenewal
-                  ? (_currentStatus == MembershipStatus.active
-                      ? 'العضوية الحالية نشطة، اختر تاريخ الانتهاء الجديد'
-                      : 'انتهت العضوية الحالية، اختر تاريخ الانتهاء الجديد')
-                  : 'لا توجد عضوية نشطة، أدخل بيانات العضوية الجديدة',
-              style: const TextStyle(color: AppColors.textMuted, fontSize: 12)),
+                isRenewal
+                    ? (_currentStatus == MembershipStatus.active
+                        ? 'العضوية الحالية نشطة، اختر تاريخ الانتهاء الجديد'
+                        : 'انتهت العضوية الحالية، اختر تاريخ الانتهاء الجديد')
+                    : 'لا توجد عضوية نشطة، أدخل بيانات العضوية الجديدة',
+                style:
+                    const TextStyle(color: AppColors.textMuted, fontSize: 12)),
             const SizedBox(height: 16),
             usersAsync.when(
               loading: () => const LoadingIndicator(
@@ -369,7 +384,8 @@ class _MembershipScreenState extends ConsumerState<MembershipScreen> {
                   style: const TextStyle(color: AppColors.error)),
               data: (_) {
                 final traineesList = usersAsync.whenOrNull(
-                      data: (users) => users.where((u) => u.role.name == 'trainee').toList(),
+                      data: (users) =>
+                          users.where((u) => u.role.name == 'trainee').toList(),
                     ) ??
                     [];
                 return UserSearchField(
@@ -414,8 +430,8 @@ class _MembershipScreenState extends ConsumerState<MembershipScreen> {
                       if (d != null) setState(() => _end = d);
                     },
                     icon: const Icon(Icons.calendar_today, size: 14),
-                    label: Text(
-                        'إلى: ${_end.toIso8601String().split('T').first}'),
+                    label:
+                        Text('إلى: ${_end.toIso8601String().split('T').first}'),
                   ),
                 ),
               ]),

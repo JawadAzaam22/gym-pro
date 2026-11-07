@@ -9,4 +9,3 @@ class CreateTrainingProgramUc {
   Future<Either<Failure, TrainingProgram>> call(TrainingProgram p) =>
       repository.createProgram(p);
 }
-

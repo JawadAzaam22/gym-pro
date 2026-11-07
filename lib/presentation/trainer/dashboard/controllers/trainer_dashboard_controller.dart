@@ -24,19 +24,28 @@ final trainerDashboardProvider =
   if (trainerId.isEmpty) {
     throw Exception('لا يوجد مستخدم مسجّل — سجّل الدخول أولاً');
   }
-  final ds = ref.read(bookingDatasourceProvider);
-  final trainees = await ds.getTrainerTrainees(trainerId: trainerId);
+  final traineesResult =
+      await ref.read(getTrainerTraineesProvider).call(trainerId: trainerId);
+  final trainees =
+      traineesResult.fold((l) => throw Exception(l.message), (r) => r);
+  final programsResult =
+      await ref.read(programUseCasesProvider).getProgramsByTrainer(trainerId);
   final programs =
-      await ref.read(programDatasourceProvider).getProgramsByTrainer(trainerId);
-  final diets =
-      await ref.read(dietDatasourceProvider).getDietsByTrainer(trainerId);
+      programsResult.fold((l) => throw Exception(l.message), (r) => r);
+  final dietsResult =
+      await ref.read(dietUseCasesProvider).getDietsByTrainer(trainerId);
+  final diets = dietsResult.fold((l) => throw Exception(l.message), (r) => r);
   // عدّ جلسات هذا المدرب فقط عبر علاقاته (getPrivateSessions بلا فلتر
   // يعيد جلسات كل المدربين — تسريب بيانات).
   int sessionsCount = 0;
   final today = DateTime.now();
   final todayPrivateSessions = <DateTime>[];
   for (final rel in trainees) {
-    final sessions = await ds.getPrivateSessions(trainerTraineeId: rel.id);
+    final sessionsResult = await ref
+        .read(getPrivateTrainingSessionsProvider)
+        .call(trainerTraineeId: rel.id);
+    final sessions =
+        sessionsResult.fold((l) => throw Exception(l.message), (r) => r);
     final todaysSessions = sessions.where((session) =>
         session.sessionDate.year == today.year &&
         session.sessionDate.month == today.month &&

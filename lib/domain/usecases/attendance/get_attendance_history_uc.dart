@@ -9,4 +9,3 @@ class GetAttendanceHistoryUc {
   Future<Either<Failure, List<Attendance>>> call(String traineeId) =>
       repository.getAttendanceByTrainee(traineeId);
 }
-

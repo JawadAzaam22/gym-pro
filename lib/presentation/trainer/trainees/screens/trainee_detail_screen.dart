@@ -152,8 +152,7 @@ class _TraineeDetailScreenState extends ConsumerState<TraineeDetailScreen> {
                         d.activeProgram == null
                             ? 'لا يوجد برنامج نشط'
                             : '${d.activeProgram!.name} - نشط',
-                        style:
-                            const TextStyle(color: AppColors.textSecondary)),
+                        style: const TextStyle(color: AppColors.textSecondary)),
                     if (d.programProgress != null) ...[
                       const SizedBox(height: 8),
                       LinearProgressIndicator(
@@ -214,8 +213,7 @@ class _TraineeDetailScreenState extends ConsumerState<TraineeDetailScreen> {
                         d.activeDiet == null
                             ? 'لا توجد خطة نشطة'
                             : d.activeDiet!.name,
-                        style:
-                            const TextStyle(color: AppColors.textSecondary)),
+                        style: const TextStyle(color: AppColors.textSecondary)),
                   ],
                 ),
               ),

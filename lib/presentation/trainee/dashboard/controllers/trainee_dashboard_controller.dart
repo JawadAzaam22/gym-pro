@@ -6,19 +6,27 @@ class TraineeDashboardData {
   final int membershipDaysLeft;
   final int bookingsCount;
   final int attendanceCount;
-  const TraineeDashboardData({required this.membershipDaysLeft, required this.bookingsCount, required this.attendanceCount});
+  const TraineeDashboardData(
+      {required this.membershipDaysLeft,
+      required this.bookingsCount,
+      required this.attendanceCount});
 }
 
-final traineeDashboardProvider = FutureProvider<TraineeDashboardData>((ref) async {
+final traineeDashboardProvider =
+    FutureProvider<TraineeDashboardData>((ref) async {
   // أي فشل في الجلب ينتشر كـ AsyncValue.error (بدون قيم بديلة مزخرفة).
   // غياب العضوية النشطة ليس خطأ: الـ datasource يعيد null في هذه الحالة.
   final currentUser = ref.read(authControllerProvider).value;
   final traineeId = currentUser?.id ?? '';
-  if (traineeId.isEmpty) throw Exception('لا يوجد مستخدم مسجّل — سجّل الدخول أولاً');
-  // استخدام Repository بدلاً من Datasource مباشر
-  final membershipRes = await ref.read(membershipRepositoryProvider).getActiveMembership(traineeId);
-  final bookingsRes = await ref.read(bookingRepositoryProvider).getBookingsByTrainee(traineeId);
-  final attendanceRes = await ref.read(attendanceRepositoryProvider).getAttendanceByTrainee(traineeId);
+  if (traineeId.isEmpty)
+    throw Exception('لا يوجد مستخدم مسجّل — سجّل الدخول أولاً');
+  final membershipRes =
+      await ref.read(membershipUseCasesProvider).getActiveMembership(traineeId);
+  final bookingsRes =
+      await ref.read(bookingUseCasesProvider).getBookingsByTrainee(traineeId);
+  final attendanceRes = await ref
+      .read(attendanceUseCasesProvider)
+      .getAttendanceByTrainee(traineeId);
 
   final failure = membershipRes.fold((l) => l.message, (_) => null) ??
       bookingsRes.fold((l) => l.message, (_) => null) ??
@@ -29,6 +37,11 @@ final traineeDashboardProvider = FutureProvider<TraineeDashboardData>((ref) asyn
   final bookings = bookingsRes.getOrElse(() => []);
   final attendance = attendanceRes.getOrElse(() => []);
 
-  final daysLeft = membership != null ? membership.endDate.difference(DateTime.now()).inDays : 0;
-  return TraineeDashboardData(membershipDaysLeft: daysLeft, bookingsCount: bookings.length, attendanceCount: attendance.length);
+  final daysLeft = membership != null
+      ? membership.endDate.difference(DateTime.now()).inDays
+      : 0;
+  return TraineeDashboardData(
+      membershipDaysLeft: daysLeft,
+      bookingsCount: bookings.length,
+      attendanceCount: attendance.length);
 });

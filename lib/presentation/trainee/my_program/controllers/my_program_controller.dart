@@ -6,7 +6,7 @@ import '../../../shared/auth/controllers/auth_controller.dart';
 final myProgramProvider = FutureProvider<List<TrainingProgram>>((ref) async {
   final currentUser = ref.read(authControllerProvider).value;
   final traineeId = currentUser?.id ?? '';
-  final res = await ref.read(programRepositoryProvider).getProgramsByTrainee(traineeId);
+  final res =
+      await ref.read(programUseCasesProvider).getProgramsByTrainee(traineeId);
   return res.fold((l) => throw Exception(l.message), (r) => r);
 });
-

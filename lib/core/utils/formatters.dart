@@ -10,9 +10,14 @@ abstract class Formatters {
     decimalDigits: 2,
   );
 
-  static String formatDate(DateTime date) => _dateFormat.format(date);
-  static String formatDateTime(DateTime date) => _dateTimeFormat.format(date);
-  static String formatTime(DateTime time) => _timeFormat.format(time);
+  // السيرفر يرسل timestamps بصيغة UTC؛ نحوّلها للمنطقة المحلية قبل
+  // التنسيق كي يظهر ارتفاع الوقت صحيحاً على الجهاز.
+  static String formatDate(DateTime date) =>
+      _dateFormat.format(date.toLocal());
+  static String formatDateTime(DateTime date) =>
+      _dateTimeFormat.format(date.toLocal());
+  static String formatTime(DateTime time) =>
+      _timeFormat.format(time.toLocal());
 
   /// يحول "14:30:00" إلى "02:30 PM" أو يبقيها حسب الحاجة
   static String formatTimeString(String timeStr) {

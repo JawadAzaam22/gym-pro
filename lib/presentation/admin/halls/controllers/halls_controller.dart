@@ -8,12 +8,12 @@ import '../../../../core/utils/time_slot_generator.dart';
 class HallsController extends AsyncNotifier<List<Hall>> {
   @override
   Future<List<Hall>> build() async {
-    final res = await ref.read(hallRepositoryProvider).getHalls();
+    final res = await ref.read(hallUseCasesProvider).getHalls();
     return res.fold((l) => throw Exception(l.message), (r) => r);
   }
 
   Future<bool> createHall(Hall hall) async {
-    final res = await ref.read(hallRepositoryProvider).createHall(hall);
+    final res = await ref.read(hallUseCasesProvider).createHall(hall);
     return res.fold((l) {
       state = AsyncValue.error(l.message, StackTrace.current);
       return false;
@@ -29,7 +29,7 @@ class HallsController extends AsyncNotifier<List<Hall>> {
   }
 
   Future<bool> updateHall(Hall hall) async {
-    final res = await ref.read(hallRepositoryProvider).updateHall(hall);
+    final res = await ref.read(hallUseCasesProvider).updateHall(hall);
     return res.fold((l) {
       state = AsyncValue.error(l.message, StackTrace.current);
       return false;
@@ -49,7 +49,7 @@ class HallsController extends AsyncNotifier<List<Hall>> {
   /// ويتخطى أي فترة موجودة مسبقًا بنفس اليوم والوقت (آمن عند الاستدعاء
   /// المتكرر بعد كل تعديل لساعات القاعة).
   Future<void> _generateHallPeriods(Hall hall) async {
-    final repo = ref.read(hallRepositoryProvider);
+    final repo = ref.read(hallUseCasesProvider);
     final slots = generateTimeSlots(
       openTime: hall.openTime,
       closeTime: hall.closeTime,
@@ -91,7 +91,7 @@ class HallsController extends AsyncNotifier<List<Hall>> {
         openTime: hall.openTime,
         closeTime: hall.closeTime,
         defaultSlotMinutes: hall.defaultSlotMinutes);
-    final res = await ref.read(hallRepositoryProvider).updateHall(updated);
+    final res = await ref.read(hallUseCasesProvider).updateHall(updated);
     return res.fold((l) => false, (_) {
       state = AsyncValue.data(
           [for (final h in state.value ?? []) h.id == hall.id ? updated : h]);
@@ -105,6 +105,6 @@ final hallsControllerProvider =
 
 final accessPeriodsProvider =
     FutureProvider.family<List<AccessPeriod>, int>((ref, hallId) async {
-  final res = await ref.read(hallRepositoryProvider).getAccessPeriods(hallId);
+  final res = await ref.read(hallUseCasesProvider).getAccessPeriods(hallId);
   return res.fold((l) => throw Exception(l.message), (r) => r);
 });

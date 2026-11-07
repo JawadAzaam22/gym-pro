@@ -1,17 +1,26 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
 import '../../../../core/constants/app_colors.dart';
 import '../../../../core/constants/enums.dart';
 import '../../../../core/utils/formatters.dart';
 import '../../../../data/providers.dart';
 import '../../../../domain/entities/notification_item.dart';
+import '../../auth/controllers/auth_controller.dart';
 import '../../widgets/app_toast.dart';
 import '../../widgets/async_error_view.dart';
 import '../../widgets/loading_indicator.dart';
 import '../controllers/notifications_controller.dart';
+import '../notification_routes.dart';
 
 /// أيقونة الإشعار حسب نوعه.
 IconData notificationIcon(NotificationType type) => switch (type) {
+      NotificationType.bookingConfirmed => Icons.calendar_month,
+      NotificationType.membershipCreated => Icons.card_membership,
+      NotificationType.trainerAssigned => Icons.fitness_center,
+      NotificationType.traineeAssigned => Icons.person,
+      NotificationType.fixedScheduleCreated => Icons.event_repeat,
+      NotificationType.membershipExpiringSoon => Icons.warning_amber,
       NotificationType.membershipExpiry => Icons.card_membership,
       NotificationType.sessionReminder => Icons.event,
       NotificationType.booking => Icons.calendar_month,
@@ -40,8 +49,7 @@ class _NotificationsScreenState extends ConsumerState<NotificationsScreen> {
 
   Future<void> _markAsRead(AppNotification n) async {
     if (n.isRead) return;
-    final res =
-        await ref.read(notificationRepositoryProvider).markAsRead(n.id);
+    final res = await ref.read(markNotificationAsReadProvider).call(n.id);
     if (!mounted) return;
     res.fold(
       (f) => AppToast.error(context, f.message),
@@ -49,11 +57,18 @@ class _NotificationsScreenState extends ConsumerState<NotificationsScreen> {
     );
   }
 
+  /// فتح الإشعار: تعليم كمقروء ثم الانتقال إلى مسار `data.screen`
+  /// الخاص بدور المستلم (إن وُجد؛ القيم المجهولة تبقى في الشاشة).
+  void _openNotification(AppNotification n) {
+    _markAsRead(n);
+    final route = notificationRouteFor(n, ref.read(currentUserRoleProvider));
+    if (route != null) context.push(route);
+  }
+
   Future<void> _markAllAsRead() async {
     if (_markingAll) return;
     setState(() => _markingAll = true);
-    final res =
-        await ref.read(notificationRepositoryProvider).markAllAsRead();
+    final res = await ref.read(markAllNotificationsAsReadProvider).call();
     if (!mounted) return;
     setState(() => _markingAll = false);
     res.fold(
@@ -66,8 +81,7 @@ class _NotificationsScreenState extends ConsumerState<NotificationsScreen> {
   }
 
   Future<void> _delete(AppNotification n) async {
-    final res =
-        await ref.read(notificationRepositoryProvider).deleteNotification(n.id);
+    final res = await ref.read(deleteNotificationProvider).call(n.id);
     if (!mounted) return;
     res.fold(
       (f) => AppToast.error(context, f.message),
@@ -99,7 +113,8 @@ class _NotificationsScreenState extends ConsumerState<NotificationsScreen> {
         ],
       ),
       body: async.when(
-        loading: () => const LoadingIndicator(message: 'جاري تحميل الإشعارات...'),
+        loading: () =>
+            const LoadingIndicator(message: 'جاري تحميل الإشعارات...'),
         error: (e, _) => AsyncErrorView(
           error: e,
           message: 'تعذّر تحميل الإشعارات',
@@ -143,7 +158,7 @@ class _NotificationsScreenState extends ConsumerState<NotificationsScreen> {
         color: Colors.transparent,
         child: InkWell(
           borderRadius: BorderRadius.circular(20),
-          onTap: () => _markAsRead(n),
+          onTap: () => _openNotification(n),
           onLongPress: () => _confirmDelete(n),
           child: Container(
             padding: const EdgeInsets.all(14),
@@ -180,8 +195,9 @@ class _NotificationsScreenState extends ConsumerState<NotificationsScreen> {
                               maxLines: 2,
                               overflow: TextOverflow.ellipsis,
                               style: TextStyle(
-                                fontWeight:
-                                    n.isRead ? FontWeight.w600 : FontWeight.w700,
+                                fontWeight: n.isRead
+                                    ? FontWeight.w600
+                                    : FontWeight.w700,
                                 fontSize: 13,
                                 color: AppColors.textPrimary,
                               ),

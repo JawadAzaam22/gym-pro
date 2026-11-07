@@ -17,21 +17,22 @@ class TraineesController extends AsyncNotifier<List<User>> {
       throw Exception('المستخدم غير مسجل الدخول');
     }
     final trainerId = currentUser.id;
-    
+
     // Debug print for diagnosis
     log('[TraineesController] trainerId: $trainerId');
-    
-    // استخدام Repository بدلاً من Datasource مباشر (يحافظ على Either)
-    final repo = ref.read(userRepositoryProvider);
-    // جلب العلاقات عبر datasource (لا يوجد repository لها بعد)
-    final rels = await ref.read(bookingDatasourceProvider).getTrainerTrainees(trainerId: trainerId);
-    
+
+    final repo = ref.read(userUseCasesProvider);
+    final relsResult = await ref.read(getTrainerTraineesProvider).call(
+          trainerId: trainerId,
+        );
+    final rels = relsResult.fold((l) => throw Exception(l.message), (r) => r);
+
     // Debug print for diagnosis
     log('[TraineesController] rels.length: ${rels.length}');
     for (final rel in rels) {
       log('[TraineesController] trainee_id: ${rel.traineeId}');
     }
-    
+
     final ids = rels.map((e) => e.traineeId).toList();
     final usersRes = await repo.getAllUsers();
     return usersRes.fold(
@@ -41,7 +42,9 @@ class TraineesController extends AsyncNotifier<List<User>> {
   }
 }
 
-final traineesControllerProvider = AsyncNotifierProvider<TraineesController, List<User>>(TraineesController.new);
+final traineesControllerProvider =
+    AsyncNotifierProvider<TraineesController, List<User>>(
+        TraineesController.new);
 
 /// تفاصيل متدرب واحد: المستخدم + آخر عضوية + آخر برنامج نشط + آخر خطة نشطة.
 /// نسبة التقدم مشتقة من تواريخ البرنامج (null عند غياب endDate).
@@ -51,14 +54,24 @@ class TraineeDetailData {
   final TrainingProgram? activeProgram;
   final double? programProgress;
   final Diet? activeDiet;
-  const TraineeDetailData({required this.user, this.latestMembership, this.activeProgram, this.programProgress, this.activeDiet});
+  const TraineeDetailData(
+      {required this.user,
+      this.latestMembership,
+      this.activeProgram,
+      this.programProgress,
+      this.activeDiet});
 }
 
-final traineeDetailProvider = FutureProvider.family<TraineeDetailData, String>((ref, traineeId) async {
-  final userRes = await ref.read(userRepositoryProvider).getUserById(traineeId);
-  final membershipsRes = await ref.read(membershipRepositoryProvider).getMembershipsByTrainee(traineeId);
-  final programsRes = await ref.read(programRepositoryProvider).getProgramsByTrainee(traineeId);
-  final dietsRes = await ref.read(dietRepositoryProvider).getDietsByTrainee(traineeId);
+final traineeDetailProvider =
+    FutureProvider.family<TraineeDetailData, String>((ref, traineeId) async {
+  final userRes = await ref.read(userUseCasesProvider).getUserById(traineeId);
+  final membershipsRes = await ref
+      .read(membershipUseCasesProvider)
+      .getMembershipsByTrainee(traineeId);
+  final programsRes =
+      await ref.read(programUseCasesProvider).getProgramsByTrainee(traineeId);
+  final dietsRes =
+      await ref.read(dietUseCasesProvider).getDietsByTrainee(traineeId);
 
   final failure = userRes.fold((l) => l.message, (_) => null) ??
       membershipsRes.fold((l) => l.message, (_) => null) ??
@@ -76,7 +89,8 @@ final traineeDetailProvider = FutureProvider.family<TraineeDetailData, String>((
   final activeProgram = activePrograms.isEmpty ? null : activePrograms.first;
   double? progress;
   if (activeProgram?.endDate != null) {
-    final total = activeProgram!.endDate!.difference(activeProgram.startDate).inDays;
+    final total =
+        activeProgram!.endDate!.difference(activeProgram.startDate).inDays;
     final elapsed = DateTime.now().difference(activeProgram.startDate).inDays;
     progress = total <= 0 ? 1.0 : (elapsed / total).clamp(0.0, 1.0);
   }
@@ -89,4 +103,3 @@ final traineeDetailProvider = FutureProvider.family<TraineeDetailData, String>((
     activeDiet: activeDiets.isEmpty ? null : activeDiets.first,
   );
 });
-

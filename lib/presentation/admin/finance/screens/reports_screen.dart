@@ -74,13 +74,11 @@ class _ReportsScreenState extends ConsumerState<ReportsScreen> {
 
   Future<void> _generateReport() async {
     setState(() => _loading = true);
-    final repo = ref.read(reportRepositoryProvider);
-    final generatedBy =
-        ref.read(authControllerProvider).value?.id ?? '';
+    final repo = ref.read(reportUseCasesProvider);
+    final generatedBy = ref.read(authControllerProvider).value?.id ?? '';
     final generatedByName =
         ref.read(authControllerProvider).value?.name ?? generatedBy;
-    final title =
-        'تقرير $_type - ${_fmt(_from)} إلى ${_fmt(_to)}';
+    final title = 'تقرير $_type - ${_fmt(_from)} إلى ${_fmt(_to)}';
 
     // 1. جلب البيانات أولاً
     Map<String, dynamic> reportData = {
@@ -172,14 +170,24 @@ class _ReportsScreenState extends ConsumerState<ReportsScreen> {
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         Text('إجمالي الإيرادات: \$${income.toStringAsFixed(2)}',
-                            style: const TextStyle(color: AppColors.success, fontWeight: FontWeight.w600, fontSize: 14)),
+                            style: const TextStyle(
+                                color: AppColors.success,
+                                fontWeight: FontWeight.w600,
+                                fontSize: 14)),
                         const SizedBox(height: 4),
-                        Text('إجمالي المصروفات: \$${expense.toStringAsFixed(2)}',
-                            style: const TextStyle(color: AppColors.error, fontWeight: FontWeight.w600, fontSize: 14)),
+                        Text(
+                            'إجمالي المصروفات: \$${expense.toStringAsFixed(2)}',
+                            style: const TextStyle(
+                                color: AppColors.error,
+                                fontWeight: FontWeight.w600,
+                                fontSize: 14)),
                         const SizedBox(height: 4),
-                        Text('الصافي: \$${(income - expense).toStringAsFixed(2)}',
+                        Text(
+                            'الصافي: \$${(income - expense).toStringAsFixed(2)}',
                             style: TextStyle(
-                                color: (income - expense) >= 0 ? AppColors.success : AppColors.error,
+                                color: (income - expense) >= 0
+                                    ? AppColors.success
+                                    : AppColors.error,
                                 fontWeight: FontWeight.w600,
                                 fontSize: 14)),
                       ],
@@ -193,8 +201,7 @@ class _ReportsScreenState extends ConsumerState<ReportsScreen> {
               loading: () => const LoadingIndicator(),
               error: (e, _) => AsyncErrorView(
                   error: e,
-                  onRetry: () =>
-                      ref.invalidate(attendanceSummaryProvider)),
+                  onRetry: () => ref.invalidate(attendanceSummaryProvider)),
               data: (a) => Row(children: [
                 Expanded(
                     child: StatCard(
@@ -218,8 +225,7 @@ class _ReportsScreenState extends ConsumerState<ReportsScreen> {
               loading: () => const LoadingIndicator(),
               error: (e, _) => AsyncErrorView(
                   error: e,
-                  onRetry: () =>
-                      ref.invalidate(weeklyAttendanceProvider)),
+                  onRetry: () => ref.invalidate(weeklyAttendanceProvider)),
               data: (counts) => WeeklyAttendanceChart(counts: counts),
             ),
             const SizedBox(height: 24),
@@ -311,18 +317,15 @@ class _ReportsScreenState extends ConsumerState<ReportsScreen> {
             const SizedBox(height: 8),
             reportsAsync.when(
               loading: () => const Center(
-                  child:
-                      CircularProgressIndicator(color: AppColors.primary)),
+                  child: CircularProgressIndicator(color: AppColors.primary)),
               error: (e, _) => AsyncErrorView(
-                  error: e,
-                  onRetry: () => ref.invalidate(reportsProvider)),
+                  error: e, onRetry: () => ref.invalidate(reportsProvider)),
               data: (list) {
                 if (list.isEmpty) {
                   return const AppCard(
                       child: Center(
                           child: Text('لا توجد تقارير بعد',
-                              style:
-                                  TextStyle(color: AppColors.textMuted))));
+                              style: TextStyle(color: AppColors.textMuted))));
                 }
                 return Column(
                   children: list
@@ -342,10 +345,8 @@ class _ReportsScreenState extends ConsumerState<ReportsScreen> {
                                               .withOpacity(0.12),
                                           borderRadius:
                                               BorderRadius.circular(8)),
-                                      child: const Icon(
-                                          Icons.description,
-                                          color: AppColors.primary,
-                                          size: 18)),
+                                      child: const Icon(Icons.description,
+                                          color: AppColors.primary, size: 18)),
                                   const SizedBox(width: 12),
                                   Expanded(
                                       child: Column(
@@ -354,8 +355,7 @@ class _ReportsScreenState extends ConsumerState<ReportsScreen> {
                                           children: [
                                         Text(r.title,
                                             style: const TextStyle(
-                                                color:
-                                                    AppColors.textPrimary,
+                                                color: AppColors.textPrimary,
                                                 fontWeight: FontWeight.w700,
                                                 fontSize: 13)),
                                         Text(
@@ -473,12 +473,12 @@ class _ReportsScreenState extends ConsumerState<ReportsScreen> {
         backgroundColor: AppColors.surfaceCard,
         title: const Text('حذف التقرير؟',
             style: TextStyle(color: AppColors.error)),
-        content: Text(
-            'هل أنت متأكد من حذف "${report.title}"؟ لا يمكن التراجع.',
+        content: Text('هل أنت متأكد من حذف "${report.title}"؟ لا يمكن التراجع.',
             style: const TextStyle(color: AppColors.textSecondary)),
         actions: [
           TextButton(
-              onPressed: () => Navigator.pop(ctx, false), child: const Text('تراجع')),
+              onPressed: () => Navigator.pop(ctx, false),
+              child: const Text('تراجع')),
           ElevatedButton(
             onPressed: () => Navigator.pop(ctx, true),
             style: ElevatedButton.styleFrom(backgroundColor: AppColors.error),
@@ -489,7 +489,8 @@ class _ReportsScreenState extends ConsumerState<ReportsScreen> {
     );
     if (confirm == true && context.mounted) {
       setState(() => _loading = true);
-      final res = await ref.read(reportRepositoryProvider).deleteReport(report.id);
+      final res =
+          await ref.read(reportUseCasesProvider).deleteReport(report.id);
       setState(() => _loading = false);
       if (context.mounted) {
         res.fold(
@@ -527,7 +528,7 @@ class _ReportsScreenState extends ConsumerState<ReportsScreen> {
     );
     if (confirm == true && mounted) {
       setState(() => _loading = true);
-      final res = await ref.read(reportRepositoryProvider).deleteAllReports();
+      final res = await ref.read(reportUseCasesProvider).deleteAllReports();
       if (!mounted) return;
       setState(() => _loading = false);
       res.fold(

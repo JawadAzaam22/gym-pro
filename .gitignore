@@ -9,6 +9,8 @@
 .history
 .svn/
 migrate_working_dir/
+workspace/*
+
 
 # IntelliJ related
 *.iml
@@ -53,6 +55,9 @@ app.*.map.json
 # Supabase CLI local state (if introduced later)
 supabase/.temp/
 supabase/.branches/
+
+# Personal review notes and private project configuration
+privateConfig/
 
 # ---------------------------------------------------------------------------
 # Signing / release artifacts

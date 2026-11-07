@@ -87,8 +87,7 @@ class _GroupBookingsScreenState extends ConsumerState<GroupBookingsScreen> {
                 ),
                 const SizedBox(height: 8),
                 const Text('اختر المتدرب ثم اختر حصة للحجز أو لإلغاء حجزه',
-                    style:
-                        TextStyle(color: AppColors.textMuted, fontSize: 11)),
+                    style: TextStyle(color: AppColors.textMuted, fontSize: 11)),
               ],
             ),
           ),
@@ -99,8 +98,7 @@ class _GroupBookingsScreenState extends ConsumerState<GroupBookingsScreen> {
                   const LoadingIndicator(message: 'جاري تحميل الحصص...'),
               error: (e, _) => AsyncErrorView(
                   error: e,
-                  onRetry: () =>
-                      ref.invalidate(sessionsControllerProvider)),
+                  onRetry: () => ref.invalidate(sessionsControllerProvider)),
               data: (sessions) => countsAsync.when(
                 loading: () =>
                     const LoadingIndicator(message: 'جاري تحميل الأعداد...'),
@@ -119,21 +117,19 @@ class _GroupBookingsScreenState extends ConsumerState<GroupBookingsScreen> {
                               size: 48, color: AppColors.textMuted),
                           const SizedBox(height: 8),
                           const Text('لا توجد حصص',
-                              style:
-                                  TextStyle(color: AppColors.textMuted)),
+                              style: TextStyle(color: AppColors.textMuted)),
                           const SizedBox(height: 8),
                           AppButton(
                               label: 'تحديث',
                               showArrow: false,
-                              onPressed: () => ref.invalidate(
-                                  sessionsControllerProvider)),
+                              onPressed: () =>
+                                  ref.invalidate(sessionsControllerProvider)),
                         ])));
                   }
                   return ListView.separated(
                     padding: const EdgeInsets.only(bottom: 16),
                     itemCount: sessions.length,
-                    separatorBuilder: (_, __) =>
-                        const SizedBox(height: 10),
+                    separatorBuilder: (_, __) => const SizedBox(height: 10),
                     itemBuilder: (_, i) {
                       final s = sessions[i];
                       final count = counts[s.id] ?? 0;
@@ -153,8 +149,7 @@ class _GroupBookingsScreenState extends ConsumerState<GroupBookingsScreen> {
                                           fontSize: 14))),
                               if (isBooked) ...[
                                 const StatusBadge(
-                                    label: 'محجوز',
-                                    variant: BadgeVariant.info),
+                                    label: 'محجوز', variant: BadgeVariant.info),
                                 const SizedBox(width: 6),
                               ],
                               StatusBadge(
@@ -166,8 +161,7 @@ class _GroupBookingsScreenState extends ConsumerState<GroupBookingsScreen> {
                             const SizedBox(height: 4),
                             Text(s.description ?? 'بدون وصف',
                                 style: const TextStyle(
-                                    color: AppColors.textMuted,
-                                    fontSize: 11)),
+                                    color: AppColors.textMuted, fontSize: 11)),
                             const SizedBox(height: 6),
                             Row(children: [
                               const Icon(Icons.meeting_room,
@@ -188,20 +182,17 @@ class _GroupBookingsScreenState extends ConsumerState<GroupBookingsScreen> {
                             Text(
                                 '${s.startDate.toIso8601String().split('T').first} → ${s.endDate.toIso8601String().split('T').first}',
                                 style: const TextStyle(
-                                    color: AppColors.textMuted,
-                                    fontSize: 10)),
+                                    color: AppColors.textMuted, fontSize: 10)),
                             const SizedBox(height: 12),
                             Row(children: [
                               Expanded(
-                                  child: Text(
-                                      '$count / ${s.capacity} محجوز',
+                                  child: Text('$count / ${s.capacity} محجوز',
                                       style: TextStyle(
                                           color: isFull
                                               ? AppColors.error
                                               : AppColors.success,
                                           fontSize: 11,
-                                          fontWeight:
-                                              FontWeight.w600))),
+                                          fontWeight: FontWeight.w600))),
                               const SizedBox(width: 12),
                               Expanded(
                                   child: isBooked
@@ -209,13 +200,11 @@ class _GroupBookingsScreenState extends ConsumerState<GroupBookingsScreen> {
                                           label: 'إلغاء الحجز',
                                           icon: Icons.event_busy,
                                           showArrow: false,
-                                          variant:
-                                              AppButtonVariant.secondary,
+                                          variant: AppButtonVariant.secondary,
                                           onPressed: () async {
                                             final ok = await ref
-                                                .read(
-                                                    bookingsControllerProvider
-                                                        .notifier)
+                                                .read(bookingsControllerProvider
+                                                    .notifier)
                                                 .cancel(existingBookingId);
                                             if (!context.mounted) return;
                                             ScaffoldMessenger.of(context)
@@ -229,8 +218,7 @@ class _GroupBookingsScreenState extends ConsumerState<GroupBookingsScreen> {
                                             ));
                                           })
                                       : AppButton(
-                                          label:
-                                              isFull ? 'ممتلئة' : 'حجز',
+                                          label: isFull ? 'ممتلئة' : 'حجز',
                                           icon: isFull
                                               ? Icons.block
                                               : Icons.event_available,
@@ -242,15 +230,14 @@ class _GroupBookingsScreenState extends ConsumerState<GroupBookingsScreen> {
                                                           null ||
                                                       _selectedTraineeId!
                                                           .isEmpty) {
-                                                    ScaffoldMessenger
-                                                        .of(context)
+                                                    ScaffoldMessenger.of(
+                                                            context)
                                                         .showSnackBar(
                                                       const SnackBar(
                                                           content: Text(
                                                               'اختر المتدرب أولاً'),
                                                           backgroundColor:
-                                                              AppColors
-                                                                  .error),
+                                                              AppColors.error),
                                                     );
                                                     return;
                                                   }
@@ -258,16 +245,13 @@ class _GroupBookingsScreenState extends ConsumerState<GroupBookingsScreen> {
                                                       .read(
                                                           bookingsControllerProvider
                                                               .notifier)
-                                                      .book(
-                                                          _selectedTraineeId!,
+                                                      .book(_selectedTraineeId!,
                                                           s.id);
                                                   if (!context.mounted) {
                                                     return;
                                                   }
-                                                  ScaffoldMessenger
-                                                      .of(context)
-                                                      .showSnackBar(
-                                                      SnackBar(
+                                                  ScaffoldMessenger.of(context)
+                                                      .showSnackBar(SnackBar(
                                                     content: Text(ok
                                                         ? 'تم الحجز'
                                                         : 'فشل الحجز'),

@@ -1,0 +1,20 @@
+# Gym Pro — Supabase CLI configuration (used by `supabase start` locally and in CI)
+project_id = "gym-pro"
+
+[db]
+major_version = 17
+
+# Users are created only through the create-user Edge Function.
+[auth]
+enable_signup = false
+minimum_password_length = 6
+
+[auth.hook.custom_access_token]
+enabled = true
+uri = "pg-functions://postgres/public/custom_access_token_hook"
+
+[functions.create-user]
+verify_jwt = true
+
+[functions.delete-user]
+verify_jwt = true

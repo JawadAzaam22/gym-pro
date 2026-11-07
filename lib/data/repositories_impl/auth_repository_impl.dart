@@ -48,5 +48,6 @@ class AuthRepositoryImpl implements IAuthRepository {
   }
 
   @override
-  Stream<User?> authStateChanges() => datasource.authStateChanges().map((e) => e?.toEntity());
+  Stream<User?> authStateChanges() =>
+      datasource.authStateChanges().map((e) => e?.toEntity());
 }

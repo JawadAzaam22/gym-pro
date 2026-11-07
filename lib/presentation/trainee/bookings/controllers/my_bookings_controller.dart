@@ -13,12 +13,13 @@ class MyBookingsData {
 final myBookingsProvider = FutureProvider<MyBookingsData>((ref) async {
   final currentUser = ref.read(authControllerProvider).value;
   final traineeId = currentUser?.id ?? '';
-  final bookingsRes = await ref.read(bookingRepositoryProvider).getBookingsByTrainee(traineeId);
-  final sessionsRes = await ref.read(sessionRepositoryProvider).getSessions();
-  final failure = bookingsRes.fold((l) => l.message, (_) => null) ?? sessionsRes.fold((l) => l.message, (_) => null);
+  final bookingsRes =
+      await ref.read(bookingUseCasesProvider).getBookingsByTrainee(traineeId);
+  final sessionsRes = await ref.read(sessionUseCasesProvider).getSessions();
+  final failure = bookingsRes.fold((l) => l.message, (_) => null) ??
+      sessionsRes.fold((l) => l.message, (_) => null);
   if (failure != null) throw Exception(failure);
   final bookings = bookingsRes.getOrElse(() => <Booking>[]);
   final sessions = sessionsRes.getOrElse(() => <Session>[]);
   return MyBookingsData(bookings: bookings, sessions: sessions);
 });
-

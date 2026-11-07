@@ -23,7 +23,8 @@ class MembershipRepositoryImpl implements IMembershipRepository {
   }
 
   @override
-  Future<Either<Failure, List<Membership>>> getMembershipsByTrainee(String traineeId) async {
+  Future<Either<Failure, List<Membership>>> getMembershipsByTrainee(
+      String traineeId) async {
     try {
       final list = await datasource.getMembershipsByTrainee(traineeId);
       return Right(list.map((e) => e.toEntity()).toList());
@@ -35,7 +36,8 @@ class MembershipRepositoryImpl implements IMembershipRepository {
   }
 
   @override
-  Future<Either<Failure, Membership?>> getActiveMembership(String traineeId) async {
+  Future<Either<Failure, Membership?>> getActiveMembership(
+      String traineeId) async {
     try {
       final m = await datasource.getActiveMembership(traineeId);
       return Right(m?.toEntity());
@@ -47,7 +49,8 @@ class MembershipRepositoryImpl implements IMembershipRepository {
   }
 
   @override
-  Future<Either<Failure, Membership?>> getLatestMembership(String traineeId) async {
+  Future<Either<Failure, Membership?>> getLatestMembership(
+      String traineeId) async {
     try {
       final m = await datasource.getLatestMembership(traineeId);
       return Right(m?.toEntity());
@@ -59,7 +62,8 @@ class MembershipRepositoryImpl implements IMembershipRepository {
   }
 
   @override
-  Future<Either<Failure, Membership>> createMembership(Membership membership) async {
+  Future<Either<Failure, Membership>> createMembership(
+      Membership membership) async {
     try {
       final model = MembershipModel.fromEntity(membership);
       final created = await datasource.createMembership(model);
@@ -72,9 +76,11 @@ class MembershipRepositoryImpl implements IMembershipRepository {
   }
 
   @override
-  Future<Either<Failure, Membership>> renewMembership(String traineeId, DateTime newEndDate, String recordedBy) async {
+  Future<Either<Failure, Membership>> renewMembership(
+      String traineeId, DateTime newEndDate, String recordedBy) async {
     try {
-      final renewed = await datasource.renewMembership(traineeId, newEndDate, recordedBy);
+      final renewed =
+          await datasource.renewMembership(traineeId, newEndDate, recordedBy);
       return Right(renewed.toEntity());
     } on ServerException catch (e) {
       return Left(ServerFailure(e.message));

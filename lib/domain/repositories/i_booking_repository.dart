@@ -14,15 +14,16 @@ abstract class IBookingRepository {
   Future<Either<Failure, int>> getBookingCount(int sessionId);
   Future<Either<Failure, Map<int, int>>> getBookingCounts();
   // Private training sessions (one-off)
-  Future<Either<Failure, List<Map<String, dynamic>>>> getPrivateSessions();
+  Future<Either<Failure, List<PrivateTrainingSession>>> getPrivateSessions(
+      {int? trainerTraineeId});
   Future<Either<Failure, PrivateTrainingSession>> schedulePrivateSession(
       PrivateTrainingSession session);
   Future<Either<Failure, PrivateTrainingSession>> updatePrivateSession(
       int sessionId, PrivateTrainingSession session);
   Future<Either<Failure, void>> deletePrivateSession(int id);
   // Private training schedule (weekly fixed appointments)
-  Future<Either<Failure, List<PrivateTrainingSchedule>>> getScheduleForTrainerTrainee(
-      int trainerTraineeId);
+  Future<Either<Failure, List<PrivateTrainingSchedule>>>
+      getScheduleForTrainerTrainee(int trainerTraineeId);
   Future<Either<Failure, List<PrivateTrainingSchedule>>> getScheduleForTrainer(
       String trainerId);
   Future<Either<Failure, List<PrivateTrainingSchedule>>> getScheduleForTrainee(
@@ -33,7 +34,12 @@ abstract class IBookingRepository {
       int id, PrivateTrainingSchedule slot);
   Future<Either<Failure, void>> deleteScheduleSlot(int id);
   // Trainer-Trainee relations
-  Future<Either<Failure, List<TrainerTrainee>>> getTrainerTrainees({String? trainerId, String? traineeId});
-  Future<Either<Failure, TrainerTrainee>> assignTrainer(String trainerId, String traineeId, String assignedBy);
+  Future<Either<Failure, List<TrainerTrainee>>> getTrainerTrainees(
+      {String? trainerId, String? traineeId});
+  Future<Either<Failure, TrainerTrainee>> assignTrainer(
+      String trainerId, String traineeId, String assignedBy);
+  Future<Either<Failure, TrainerTrainee>> changeTrainerAssignment(
+      int assignmentId, String newTrainerId);
   Future<Either<Failure, void>> deleteTrainerTraineeRelation(int id);
+  Future<Either<Failure, void>> deactivateTrainerAssignment(int id);
 }

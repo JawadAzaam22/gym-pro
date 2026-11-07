@@ -9,4 +9,3 @@ class RecordPaymentUc {
   Future<Either<Failure, PaymentCost>> call(PaymentCost p) =>
       repository.recordPayment(p);
 }
-

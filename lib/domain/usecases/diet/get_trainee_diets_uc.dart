@@ -9,4 +9,3 @@ class GetTraineeDietsUc {
   Future<Either<Failure, List<Diet>>> call(String traineeId) =>
       repository.getDietsByTrainee(traineeId);
 }
-

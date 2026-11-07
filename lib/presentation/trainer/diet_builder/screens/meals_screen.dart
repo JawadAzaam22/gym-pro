@@ -30,12 +30,20 @@ class _MealsScreenState extends ConsumerState<MealsScreen> {
       ),
       body: FutureBuilder(
         key: ValueKey(_refresh),
-        future: ref.read(dietDatasourceProvider).getMeals(widget.dayId),
+        future: ref.read(dietMealsProvider(widget.dayId).future),
         builder: (ctx, snap) {
-          if (snap.connectionState == ConnectionState.waiting) return const Center(child: CircularProgressIndicator(color: AppColors.primary));
-          if (snap.hasError) return Center(child: Text('خطأ: ${snap.error}', style: const TextStyle(color: AppColors.error)));
+          if (snap.connectionState == ConnectionState.waiting)
+            return const Center(
+                child: CircularProgressIndicator(color: AppColors.primary));
+          if (snap.hasError)
+            return Center(
+                child: Text('خطأ: ${snap.error}',
+                    style: const TextStyle(color: AppColors.error)));
           final meals = snap.data!;
-          if (meals.isEmpty) return const Center(child: Text('لا توجد وجبات — أضف الأولى', style: TextStyle(color: AppColors.textMuted)));
+          if (meals.isEmpty)
+            return const Center(
+                child: Text('لا توجد وجبات — أضف الأولى',
+                    style: TextStyle(color: AppColors.textMuted)));
           return ListView.separated(
             padding: const EdgeInsets.all(16),
             itemCount: meals.length,
@@ -44,18 +52,48 @@ class _MealsScreenState extends ConsumerState<MealsScreen> {
               final m = meals[i];
               return AppCard(
                 child: Row(children: [
-                  Container(width: 36, height: 36, decoration: BoxDecoration(color: AppColors.success.withOpacity(0.12), borderRadius: BorderRadius.circular(8)), child: const Icon(Icons.restaurant, size: 16, color: AppColors.success)),
+                  Container(
+                      width: 36,
+                      height: 36,
+                      decoration: BoxDecoration(
+                          color: AppColors.success.withOpacity(0.12),
+                          borderRadius: BorderRadius.circular(8)),
+                      child: const Icon(Icons.restaurant,
+                          size: 16, color: AppColors.success)),
                   const SizedBox(width: 12),
-                  Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [Text(m.mealType, style: const TextStyle(color: AppColors.textPrimary, fontWeight: FontWeight.w600, fontSize: 13)), Text(m.description, style: const TextStyle(color: AppColors.textMuted, fontSize: 11)), if (m.calories != null) Text('${m.calories} سعرة', style: const TextStyle(color: AppColors.warning, fontSize: 11))])),
+                  Expanded(
+                      child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                        Text(m.mealType,
+                            style: const TextStyle(
+                                color: AppColors.textPrimary,
+                                fontWeight: FontWeight.w600,
+                                fontSize: 13)),
+                        Text(m.description,
+                            style: const TextStyle(
+                                color: AppColors.textMuted, fontSize: 11)),
+                        if (m.calories != null)
+                          Text('${m.calories} سعرة',
+                              style: const TextStyle(
+                                  color: AppColors.warning, fontSize: 11))
+                      ])),
                   IconButton(
-                    icon: const Icon(Icons.edit_outlined, color: AppColors.primary, size: 20),
+                    icon: const Icon(Icons.edit_outlined,
+                        color: AppColors.primary, size: 20),
                     onPressed: () => _editMeal(context, m),
                   ),
                   IconButton(
-                    icon: const Icon(Icons.delete_outline, color: AppColors.error, size: 20),
+                    icon: const Icon(Icons.delete_outline,
+                        color: AppColors.error, size: 20),
                     onPressed: () async {
                       try {
-                        await ref.read(dietDatasourceProvider).deleteMeal(m.id);
+                        final result = await ref
+                            .read(dietContentUseCasesProvider)
+                            .deleteMeal(m.id);
+                        result.fold(
+                            (failure) => throw Exception(failure.message),
+                            (_) {});
                         ref.invalidate(dietMealsProvider(widget.dayId));
                         if (mounted) setState(() => _refresh++);
                       } catch (err) {
@@ -80,23 +118,38 @@ class _MealsScreenState extends ConsumerState<MealsScreen> {
       context: context,
       builder: (ctx) => AlertDialog(
         backgroundColor: AppColors.surfaceCard,
-        title: const Text('وجبة جديدة', style: TextStyle(color: AppColors.textPrimary)),
+        title: const Text('وجبة جديدة',
+            style: TextStyle(color: AppColors.textPrimary)),
         content: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            TextField(controller: typeCtrl, decoration: const InputDecoration(labelText: 'نوع الوجبة (فطور/غداء/عشاء/سناك)')),
-            TextField(controller: descCtrl, decoration: const InputDecoration(labelText: 'الوصف'), maxLines: 2),
-            TextField(controller: calCtrl, decoration: const InputDecoration(labelText: 'السعرات (اختياري)'), keyboardType: TextInputType.number),
+            TextField(
+                controller: typeCtrl,
+                decoration: const InputDecoration(
+                    labelText: 'نوع الوجبة (فطور/غداء/عشاء/سناك)')),
+            TextField(
+                controller: descCtrl,
+                decoration: const InputDecoration(labelText: 'الوصف'),
+                maxLines: 2),
+            TextField(
+                controller: calCtrl,
+                decoration:
+                    const InputDecoration(labelText: 'السعرات (اختياري)'),
+                keyboardType: TextInputType.number),
           ],
         ),
         actions: [
-          TextButton(onPressed: () => Navigator.pop(ctx), child: const Text('إلغاء')),
+          TextButton(
+              onPressed: () => Navigator.pop(ctx), child: const Text('إلغاء')),
           ElevatedButton(
             onPressed: () async {
-              if (typeCtrl.text.trim().isEmpty || descCtrl.text.trim().isEmpty) return;
+              if (typeCtrl.text.trim().isEmpty || descCtrl.text.trim().isEmpty)
+                return;
               Navigator.pop(ctx);
               try {
-                await ref.read(dietDatasourceProvider).addMeal(DietMealModel(
+                final result = await ref
+                    .read(dietContentUseCasesProvider)
+                    .addMeal(DietMealModel(
                       id: 0,
                       dayId: widget.dayId,
                       mealType: typeCtrl.text.trim(),
@@ -104,6 +157,8 @@ class _MealsScreenState extends ConsumerState<MealsScreen> {
                       calories: int.tryParse(calCtrl.text.trim()),
                       orderIndex: 0,
                     ));
+                result.fold(
+                    (failure) => throw Exception(failure.message), (_) {});
                 ref.invalidate(dietMealsProvider(widget.dayId));
                 if (mounted) {
                   setState(() => _refresh++);
@@ -128,23 +183,38 @@ class _MealsScreenState extends ConsumerState<MealsScreen> {
       context: context,
       builder: (ctx) => AlertDialog(
         backgroundColor: AppColors.surfaceCard,
-        title: const Text('تعديل الوجبة', style: TextStyle(color: AppColors.textPrimary)),
+        title: const Text('تعديل الوجبة',
+            style: TextStyle(color: AppColors.textPrimary)),
         content: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            TextField(controller: typeCtrl, decoration: const InputDecoration(labelText: 'نوع الوجبة (فطور/غداء/عشاء/سناك)')),
-            TextField(controller: descCtrl, decoration: const InputDecoration(labelText: 'الوصف'), maxLines: 2),
-            TextField(controller: calCtrl, decoration: const InputDecoration(labelText: 'السعرات (اختياري)'), keyboardType: TextInputType.number),
+            TextField(
+                controller: typeCtrl,
+                decoration: const InputDecoration(
+                    labelText: 'نوع الوجبة (فطور/غداء/عشاء/سناك)')),
+            TextField(
+                controller: descCtrl,
+                decoration: const InputDecoration(labelText: 'الوصف'),
+                maxLines: 2),
+            TextField(
+                controller: calCtrl,
+                decoration:
+                    const InputDecoration(labelText: 'السعرات (اختياري)'),
+                keyboardType: TextInputType.number),
           ],
         ),
         actions: [
-          TextButton(onPressed: () => Navigator.pop(ctx), child: const Text('إلغاء')),
+          TextButton(
+              onPressed: () => Navigator.pop(ctx), child: const Text('إلغاء')),
           ElevatedButton(
             onPressed: () async {
-              if (typeCtrl.text.trim().isEmpty || descCtrl.text.trim().isEmpty) return;
+              if (typeCtrl.text.trim().isEmpty || descCtrl.text.trim().isEmpty)
+                return;
               Navigator.pop(ctx);
               try {
-                await ref.read(dietDatasourceProvider).updateMeal(DietMealModel(
+                final result = await ref
+                    .read(dietContentUseCasesProvider)
+                    .updateMeal(DietMealModel(
                       id: m.id,
                       dayId: m.dayId,
                       mealType: typeCtrl.text.trim(),
@@ -152,6 +222,8 @@ class _MealsScreenState extends ConsumerState<MealsScreen> {
                       calories: int.tryParse(calCtrl.text.trim()),
                       orderIndex: m.orderIndex,
                     ));
+                result.fold(
+                    (failure) => throw Exception(failure.message), (_) {});
                 ref.invalidate(dietMealsProvider(widget.dayId));
                 if (mounted) {
                   setState(() => _refresh++);

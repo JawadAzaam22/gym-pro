@@ -15,7 +15,8 @@ class ProgramRepositoryImpl implements IProgramRepository {
   ProgramRepositoryImpl(this.datasource);
 
   @override
-  Future<Either<Failure, TrainingProgram>> createProgram(TrainingProgram program) async {
+  Future<Either<Failure, TrainingProgram>> createProgram(
+      TrainingProgram program) async {
     try {
       final model = TrainingProgramModel.fromEntity(program);
       final created = await datasource.createProgram(model);
@@ -64,7 +65,8 @@ class ProgramRepositoryImpl implements IProgramRepository {
   }
 
   @override
-  Future<Either<Failure, List<TrainingProgram>>> getProgramsByTrainee(String traineeId) async {
+  Future<Either<Failure, List<TrainingProgram>>> getProgramsByTrainee(
+      String traineeId) async {
     try {
       final list = await datasource.getProgramsByTrainee(traineeId);
       return Right(list.map((e) => e.toEntity()).toList());
@@ -76,7 +78,8 @@ class ProgramRepositoryImpl implements IProgramRepository {
   }
 
   @override
-  Future<Either<Failure, List<TrainingProgram>>> getProgramsByTrainer(String trainerId) async {
+  Future<Either<Failure, List<TrainingProgram>>> getProgramsByTrainer(
+      String trainerId) async {
     try {
       final list = await datasource.getProgramsByTrainer(trainerId);
       return Right(list.map((e) => e.toEntity()).toList());
@@ -88,7 +91,8 @@ class ProgramRepositoryImpl implements IProgramRepository {
   }
 
   @override
-  Future<Either<Failure, TrainingProgram>> updateProgram(TrainingProgram program) async {
+  Future<Either<Failure, TrainingProgram>> updateProgram(
+      TrainingProgram program) async {
     try {
       final model = TrainingProgramModel.fromEntity(program);
       final updated = await datasource.updateProgram(model);
@@ -126,7 +130,8 @@ class ProgramRepositoryImpl implements IProgramRepository {
   }
 
   @override
-  Future<Either<Failure, ProgramExercise>> addExercise(ProgramExercise exercise) async {
+  Future<Either<Failure, ProgramExercise>> addExercise(
+      ProgramExercise exercise) async {
     try {
       final model = ProgramExerciseModel.fromEntity(exercise);
       final created = await datasource.addExercise(model);
@@ -143,6 +148,44 @@ class ProgramRepositoryImpl implements IProgramRepository {
     try {
       final list = await datasource.getExercises(dayId);
       return Right(list.map((e) => e.toEntity()).toList());
+    } on ServerException catch (e) {
+      return Left(ServerFailure(e.message));
+    } catch (e) {
+      return Left(ServerFailure(e.toString()));
+    }
+  }
+
+  @override
+  Future<Either<Failure, void>> deleteDay(int id) async {
+    try {
+      await datasource.deleteDay(id);
+      return const Right(null);
+    } on ServerException catch (e) {
+      return Left(ServerFailure(e.message));
+    } catch (e) {
+      return Left(ServerFailure(e.toString()));
+    }
+  }
+
+  @override
+  Future<Either<Failure, void>> deleteExercise(int id) async {
+    try {
+      await datasource.deleteExercise(id);
+      return const Right(null);
+    } on ServerException catch (e) {
+      return Left(ServerFailure(e.message));
+    } catch (e) {
+      return Left(ServerFailure(e.toString()));
+    }
+  }
+
+  @override
+  Future<Either<Failure, ProgramExercise>> updateExercise(
+      ProgramExercise exercise) async {
+    try {
+      final updated = await datasource
+          .updateExercise(ProgramExerciseModel.fromEntity(exercise));
+      return Right(updated.toEntity());
     } on ServerException catch (e) {
       return Left(ServerFailure(e.message));
     } catch (e) {

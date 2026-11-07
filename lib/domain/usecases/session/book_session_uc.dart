@@ -9,4 +9,3 @@ class BookSessionUc {
   Future<Either<Failure, Booking>> call(String traineeId, int sessionId) =>
       repository.bookSession(traineeId, sessionId);
 }
-

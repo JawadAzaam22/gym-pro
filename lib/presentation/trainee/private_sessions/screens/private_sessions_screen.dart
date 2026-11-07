@@ -104,7 +104,8 @@ class _FixedScheduleTab extends ConsumerWidget {
                                 crossAxisAlignment: CrossAxisAlignment.start,
                                 children: [
                                   Text(
-                                    slot.trainerName ?? 'مدرب: ${slot.trainerTraineeId}',
+                                    slot.trainerName ??
+                                        'مدرب: ${slot.trainerTraineeId}',
                                     style: const TextStyle(
                                       color: AppColors.textPrimary,
                                       fontWeight: FontWeight.w700,

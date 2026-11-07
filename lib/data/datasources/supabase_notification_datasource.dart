@@ -69,9 +69,7 @@ class SupabaseNotificationDatasource {
         .eq('user_id', uid)
         .order('created_at', ascending: false)
         .limit(50)
-        .map((list) => list
-            .map(NotificationModel.fromJson)
-            .toList());
+        .map((list) => list.map(NotificationModel.fromJson).toList());
   }
 
   Future<void> markAsRead(int id) async {
@@ -79,7 +77,9 @@ class SupabaseNotificationDatasource {
     try {
       await client
           .from('notifications')
-          .update({'is_read': true}).eq('id', id).eq('user_id', uid);
+          .update({'is_read': true})
+          .eq('id', id)
+          .eq('user_id', uid);
     } catch (e) {
       if (e is app_ex.AuthException) rethrow;
       throw app_ex.ServerException('فشل تعليم الإشعار كمقروء: $e');
@@ -129,7 +129,8 @@ class SupabaseNotificationDatasource {
             'title': title,
             'body': body,
             'type': type,
-            'entity_id': entityId,
+            // The server contract stores related identifiers in `data`.
+            if (entityId != null) 'data': {'entity_id': entityId},
           })
           .select()
           .single();

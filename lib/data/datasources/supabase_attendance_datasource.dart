@@ -6,76 +6,69 @@ class SupabaseAttendanceDatasource {
   final SupabaseClient client;
   SupabaseAttendanceDatasource(this.client);
 
+  /// Records an attendance row through the `record_attendance` RPC.
+  /// Membership validity, the one-check-in-per-day rule and the timestamp are
+  /// all decided by the database in a single atomic call.
   Future<AttendanceModel> recordAttendance(String traineeId, String method,
       {int? sessionId}) async {
     try {
-      // SRS 5.2: فحص حالة العضوية قبل تسجيل الحضور — العضوية المنتهية
-      // تمنع الدخول ويُعرض تنبيه للاستقبال بدل إدراج الحضور.
-      await _assertMembershipActive(traineeId);
-      final dayStart = DateTime.now();
-      final day = DateTime(dayStart.year, dayStart.month, dayStart.day);
-      var existingQuery = client
-          .from('attendance')
-          .select('id')
-          .eq('trainee_id', traineeId)
-          .gte('check_in_time', day.toIso8601String())
-          .lt('check_in_time',
-              day.add(const Duration(days: 1)).toIso8601String());
-      final existing = sessionId == null
-          ? await existingQuery.isFilter('session_id', null)
-          : await existingQuery.eq('session_id', sessionId);
-      if ((existing as List).isNotEmpty) {
-        throw ServerException('تم تسجيل حضور المتدرب مسبقًا اليوم');
-      }
-      final payload = {
-        'trainee_id': traineeId,
-        'check_in_time': DateTime.now().toIso8601String(),
-        'method': method,
-        if (sessionId != null) 'session_id': sessionId
-      };
-      final data =
-          await client.from('attendance').insert(payload).select().single();
-      return AttendanceModel.fromJson(data);
-    } on MembershipExpiredException {
-      rethrow;
+      final data = await client.rpc('record_attendance', params: {
+        'p_trainee_id': traineeId,
+        'p_method': method,
+        if (sessionId != null) 'p_session_id': sessionId,
+      });
+      return AttendanceModel.fromJson(Map<String, dynamic>.from(data as Map));
+    } on PostgrestException catch (e) {
+      throw _mapRpcError(e);
     } catch (e) {
       throw ServerException('فشل تسجيل الحضور: $e');
     }
   }
 
-  /// يتحقق أن آخر عضوية للمتدرب نشطة وغير منتهية:
-  /// status == 'active' AND end_date >= اليوم.
-  Future<void> _assertMembershipActive(String traineeId) async {
+  /// Single-use QR check-in (`check_in_by_qr` RPC): the token is consumed and
+  /// the attendance row written in one transaction.
+  Future<({AttendanceModel attendance, String traineeName})> checkInByQr(
+      String token,
+      {int? sessionId}) async {
     try {
-      final data = await client
-          .from('memberships')
-          .select('status, end_date')
-          .eq('trainee_id', traineeId)
-          .order('end_date', ascending: false)
-          .limit(1)
-          .maybeSingle();
-      DateTime? endDate;
-      if (data != null && data['end_date'] != null) {
-        endDate = DateTime.tryParse(data['end_date'] as String);
-      }
-      final now = DateTime.now();
-      final today = DateTime(now.year, now.month, now.day);
-      final valid = data != null &&
-          (data['status'] as String?) == 'active' &&
-          endDate != null &&
-          !endDate.isBefore(today);
-      if (!valid) {
+      final data = await client.rpc('check_in_by_qr', params: {
+        'p_token': token,
+        if (sessionId != null) 'p_session_id': sessionId,
+      });
+      final json = Map<String, dynamic>.from(data as Map);
+      return (
+        attendance: AttendanceModel.fromJson(json),
+        traineeName: (json['trainee_name'] as String?) ?? '',
+      );
+    } on PostgrestException catch (e) {
+      throw _mapRpcError(e);
+    } catch (e) {
+      throw ServerException('فشل تسجيل الحضور: $e');
+    }
+  }
+
+  /// Translates the stable error codes raised by the attendance RPCs into
+  /// the exceptions the rest of the app already understands.
+  Exception _mapRpcError(PostgrestException e) {
+    switch (e.message.trim()) {
+      case 'ALREADY_CHECKED_IN':
+        return ServerException('تم تسجيل حضور المتدرب مسبقًا اليوم');
+      case 'MEMBERSHIP_EXPIRED':
+        final endDate = DateTime.tryParse('${e.details ?? ''}');
         final endStr =
             endDate?.toIso8601String().split('T').first ?? 'غير معروف';
-        throw MembershipExpiredException(
+        return MembershipExpiredException(
             'العضوية منتهية — تاريخ الانتهاء: $endStr — لا يمكن تسجيل الدخول',
             endDate);
-      }
-    } on MembershipExpiredException {
-      rethrow;
-    } catch (e) {
-      if (e is MembershipExpiredException) rethrow;
-      throw ServerException('فشل التحقق من العضوية: $e');
+      case 'TRAINEE_NOT_FOUND_OR_INACTIVE':
+        return ServerException('المتدرب غير موجود أو حسابه غير نشط');
+      case 'INVALID_QR':
+      case 'INVALID_OR_EXPIRED_QR':
+        return ServerException('رمز QR غير صالح أو منتهي، اطلب من المتدرب تحديثه');
+      case 'PERMISSION_DENIED':
+        return ServerException('ليست لديك صلاحية تسجيل الحضور');
+      default:
+        return ServerException('فشل تسجيل الحضور (${e.code ?? 'خطأ'})');
     }
   }
 

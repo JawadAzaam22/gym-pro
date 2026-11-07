@@ -8,7 +8,7 @@ import '../../../../domain/entities/notification_item.dart';
 /// يستبدل الاستعلام الأولي ثم يستقبل أي إشعار جديد فور إنشائه في القاعدة،
 /// فلا حاجة لاستدعاء يدوي للتحديث.
 final notificationsProvider = StreamProvider<List<AppNotification>>((ref) {
-  return ref.watch(notificationRepositoryProvider).watchMyNotifications();
+  return ref.watch(watchMyNotificationsProvider).call();
 });
 
 /// عدد الإشعارات غير المقروءة — مُشتقة من البث نفسه،

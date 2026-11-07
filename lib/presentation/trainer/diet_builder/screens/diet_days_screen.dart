@@ -30,11 +30,13 @@ class DietDaysScreen extends ConsumerWidget {
               onPressed: () => context.push('/trainer/diets/new', extra: diet),
             ),
             IconButton(
-              icon: Icon(diet!.isActive ? Icons.block : Icons.check_circle, size: 20),
+              icon: Icon(diet!.isActive ? Icons.block : Icons.check_circle,
+                  size: 20),
               onPressed: () => _confirmDeactivate(context, ref),
             ),
             IconButton(
-              icon: const Icon(Icons.delete_forever, size: 20, color: AppColors.error),
+              icon: const Icon(Icons.delete_forever,
+                  size: 20, color: AppColors.error),
               onPressed: () => _confirmDeleteDiet(context, ref),
             ),
           ],
@@ -48,9 +50,13 @@ class DietDaysScreen extends ConsumerWidget {
       ),
       body: daysAsync.when(
         loading: () => const LoadingIndicator(message: 'جاري تحميل الأيام...'),
-        error: (e, _) => AsyncErrorView(error: e, onRetry: () => ref.invalidate(dietDaysProvider(dietId))),
+        error: (e, _) => AsyncErrorView(
+            error: e, onRetry: () => ref.invalidate(dietDaysProvider(dietId))),
         data: (days) {
-          if (days.isEmpty) return const Center(child: Text('لا توجد أيام', style: TextStyle(color: AppColors.textMuted)));
+          if (days.isEmpty)
+            return const Center(
+                child: Text('لا توجد أيام',
+                    style: TextStyle(color: AppColors.textMuted)));
           return ListView.separated(
             padding: const EdgeInsets.all(16),
             itemCount: days.length,
@@ -58,19 +64,35 @@ class DietDaysScreen extends ConsumerWidget {
             itemBuilder: (_, i) {
               final d = days[i];
               return InkWell(
-                onTap: () => context.push(
-                    '/trainer/diets/$dietId/days/${d.id}/meals'),
+                onTap: () =>
+                    context.push('/trainer/diets/$dietId/days/${d.id}/meals'),
                 borderRadius: BorderRadius.circular(16),
                 child: AppCard(
                   child: Row(children: [
-                    Container(width: 36, height: 36, decoration: BoxDecoration(color: AppColors.success.withOpacity(0.12), borderRadius: BorderRadius.circular(8)), child: Center(child: Text('${d.orderIndex + 1}', style: const TextStyle(color: AppColors.success, fontWeight: FontWeight.w700)))),
+                    Container(
+                        width: 36,
+                        height: 36,
+                        decoration: BoxDecoration(
+                            color: AppColors.success.withOpacity(0.12),
+                            borderRadius: BorderRadius.circular(8)),
+                        child: Center(
+                            child: Text('${d.orderIndex + 1}',
+                                style: const TextStyle(
+                                    color: AppColors.success,
+                                    fontWeight: FontWeight.w700)))),
                     const SizedBox(width: 12),
-                    Expanded(child: Text(DayOfWeekHelper.name(d.dayOfWeek), style: const TextStyle(color: AppColors.textPrimary, fontWeight: FontWeight.w600))),
+                    Expanded(
+                        child: Text(DayOfWeekHelper.name(d.dayOfWeek),
+                            style: const TextStyle(
+                                color: AppColors.textPrimary,
+                                fontWeight: FontWeight.w600))),
                     IconButton(
-                      icon: const Icon(Icons.delete_outline, size: 18, color: AppColors.error),
+                      icon: const Icon(Icons.delete_outline,
+                          size: 18, color: AppColors.error),
                       onPressed: () => _confirmDeleteDay(context, ref, d.id),
                     ),
-                    const Icon(Icons.arrow_back_ios, size: 12, color: AppColors.textMuted),
+                    const Icon(Icons.arrow_back_ios,
+                        size: 12, color: AppColors.textMuted),
                   ]),
                 ),
               );
@@ -88,14 +110,19 @@ class DietDaysScreen extends ConsumerWidget {
       context: context,
       builder: (ctx) => AlertDialog(
         backgroundColor: AppColors.surfaceCard,
-        title: const Text('حذف الخطة الغذائية نهائياً؟', style: TextStyle(color: AppColors.error)),
-        content: Text('سيتم حذف "${d.name}" وجميع أيامها ووجباتها. لا يمكن التراجع.', style: const TextStyle(color: AppColors.textSecondary)),
+        title: const Text('حذف الخطة الغذائية نهائياً؟',
+            style: TextStyle(color: AppColors.error)),
+        content: Text(
+            'سيتم حذف "${d.name}" وجميع أيامها ووجباتها. لا يمكن التراجع.',
+            style: const TextStyle(color: AppColors.textSecondary)),
         actions: [
-          TextButton(onPressed: () => Navigator.pop(ctx), child: const Text('تراجع')),
+          TextButton(
+              onPressed: () => Navigator.pop(ctx), child: const Text('تراجع')),
           ElevatedButton(
             onPressed: () async {
               Navigator.pop(ctx);
-              final ok = await ref.read(dietBuilderProvider.notifier).delete(d.id);
+              final ok =
+                  await ref.read(dietBuilderProvider.notifier).delete(d.id);
               if (context.mounted) {
                 if (ok) {
                   AppToast.success(context, 'تم الحذف');
@@ -118,15 +145,22 @@ class DietDaysScreen extends ConsumerWidget {
       context: context,
       builder: (ctx) => AlertDialog(
         backgroundColor: AppColors.surfaceCard,
-        title: const Text('حذف اليوم؟', style: TextStyle(color: AppColors.error)),
-        content: const Text('سيتم حذف هذا اليوم وجميع وجباته.', style: TextStyle(color: AppColors.textSecondary)),
+        title:
+            const Text('حذف اليوم؟', style: TextStyle(color: AppColors.error)),
+        content: const Text('سيتم حذف هذا اليوم وجميع وجباته.',
+            style: TextStyle(color: AppColors.textSecondary)),
         actions: [
-          TextButton(onPressed: () => Navigator.pop(ctx), child: const Text('تراجع')),
+          TextButton(
+              onPressed: () => Navigator.pop(ctx), child: const Text('تراجع')),
           ElevatedButton(
             onPressed: () async {
               Navigator.pop(ctx);
               try {
-                await ref.read(dietDatasourceProvider).deleteDay(dayId);
+                final result = await ref
+                    .read(dietContentUseCasesProvider)
+                    .deleteDay(dayId);
+                result.fold(
+                    (failure) => throw Exception(failure.message), (_) {});
                 ref.invalidate(dietDaysProvider(dietId));
                 if (context.mounted) AppToast.success(context, 'تم الحذف');
               } catch (e) {
@@ -148,20 +182,35 @@ class DietDaysScreen extends ConsumerWidget {
       builder: (ctx) => StatefulBuilder(
         builder: (ctx, setState) => AlertDialog(
           backgroundColor: AppColors.surfaceCard,
-          title: const Text('يوم جديد', style: TextStyle(color: AppColors.textPrimary)),
+          title: const Text('يوم جديد',
+              style: TextStyle(color: AppColors.textPrimary)),
           content: DropdownButtonFormField<int>(
             value: dayOfWeek,
             decoration: const InputDecoration(labelText: 'اليوم'),
-            items: DayOfWeekHelper.entries.map((e) => DropdownMenuItem(value: e.key, child: Text(e.value))).toList(),
+            items: DayOfWeekHelper.entries
+                .map(
+                    (e) => DropdownMenuItem(value: e.key, child: Text(e.value)))
+                .toList(),
             onChanged: (v) => setState(() => dayOfWeek = v ?? 0),
           ),
           actions: [
-            TextButton(onPressed: () => Navigator.pop(ctx), child: const Text('إلغاء')),
+            TextButton(
+                onPressed: () => Navigator.pop(ctx),
+                child: const Text('إلغاء')),
             ElevatedButton(
               onPressed: () async {
                 Navigator.pop(ctx);
                 try {
-                  await ref.read(dietDatasourceProvider).addDay(DietDayModel(id: 0, dietId: dietId, dayOfWeek: dayOfWeek, orderIndex: 0));
+                  final result = await ref
+                      .read(dietContentUseCasesProvider)
+                      .addDay(DietDayModel(
+                        id: 0,
+                        dietId: dietId,
+                        dayOfWeek: dayOfWeek,
+                        orderIndex: 0,
+                      ));
+                  result.fold(
+                      (failure) => throw Exception(failure.message), (_) {});
                   ref.invalidate(dietDaysProvider(dietId));
                   if (context.mounted) AppToast.success(context, 'تمت الإضافة');
                 } catch (e) {
@@ -183,16 +232,23 @@ class DietDaysScreen extends ConsumerWidget {
       context: context,
       builder: (ctx) => AlertDialog(
         backgroundColor: AppColors.surfaceCard,
-        title: Text(d.isActive ? 'تعطيل الخطة؟' : 'تفعيل الخطة؟', style: const TextStyle(color: AppColors.textPrimary)),
-        content: Text('هل أنت متأكد من ${d.isActive ? 'تعطيل' : 'تفعيل'} "${d.name}"؟', style: const TextStyle(color: AppColors.textSecondary)),
+        title: Text(d.isActive ? 'تعطيل الخطة؟' : 'تفعيل الخطة؟',
+            style: const TextStyle(color: AppColors.textPrimary)),
+        content: Text(
+            'هل أنت متأكد من ${d.isActive ? 'تعطيل' : 'تفعيل'} "${d.name}"؟',
+            style: const TextStyle(color: AppColors.textSecondary)),
         actions: [
-          TextButton(onPressed: () => Navigator.pop(ctx), child: const Text('إلغاء')),
+          TextButton(
+              onPressed: () => Navigator.pop(ctx), child: const Text('إلغاء')),
           ElevatedButton(
             onPressed: () async {
               Navigator.pop(ctx);
-              final ok = await ref.read(dietBuilderProvider.notifier).deactivate(d.id);
+              final ok =
+                  await ref.read(dietBuilderProvider.notifier).deactivate(d.id);
               if (context.mounted) {
-                ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(ok ? 'تم التحديث' : 'فشل'), backgroundColor: ok ? AppColors.success : AppColors.error));
+                ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+                    content: Text(ok ? 'تم التحديث' : 'فشل'),
+                    backgroundColor: ok ? AppColors.success : AppColors.error));
                 if (ok) Navigator.pop(context);
               }
             },

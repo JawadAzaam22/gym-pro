@@ -11,6 +11,7 @@ abstract class IHallRepository {
   Future<Either<Failure, void>> deactivateHall(int id);
   // Access periods
   Future<Either<Failure, List<AccessPeriod>>> getAccessPeriods(int hallId);
+
   /// يجلب كل فترات الوصول لكل القاعات بطلب واحد (بديل N+1 عند بناء الجدول).
   Future<Either<Failure, List<AccessPeriod>>> getAllAccessPeriods();
   Future<Either<Failure, AccessPeriod>> createAccessPeriod(AccessPeriod period);

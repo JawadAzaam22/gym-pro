@@ -8,4 +8,3 @@ class CancelBookingUc {
   Future<Either<Failure, void>> call(int bookingId) =>
       repository.cancelBooking(bookingId);
 }
-

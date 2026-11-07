@@ -17,4 +17,6 @@ abstract class IDietRepository {
   Future<Either<Failure, DietMeal>> addMeal(DietMeal meal);
   Future<Either<Failure, List<DietDay>>> getDays(int dietId);
   Future<Either<Failure, List<DietMeal>>> getMeals(int dayId);
+  Future<Either<Failure, void>> deleteMeal(int id);
+  Future<Either<Failure, DietMeal>> updateMeal(DietMeal meal);
 }

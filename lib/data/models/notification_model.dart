@@ -11,6 +11,7 @@ class NotificationModel extends AppNotification {
     super.entityId,
     required super.isRead,
     required super.createdAt,
+    super.data,
   });
 
   factory NotificationModel.fromJson(Map<String, dynamic> json) =>
@@ -22,7 +23,12 @@ class NotificationModel extends AppNotification {
         type: NotificationTypeX.fromString(json['type'] as String?),
         entityId: (json['entity_id'] as num?)?.toInt(),
         isRead: json['is_read'] as bool? ?? false,
+        // يبقى UTC كما أرسله السيرفر؛ طبقة العرض (Formatters) تحوّل للمنطقة
+        // المحلية عند التنسيق كي لا تنكسر مقارنات DateTime (isUtc).
         createdAt: DateTime.parse(json['created_at'] as String),
+        data: json['data'] is Map
+            ? Map<String, dynamic>.from(json['data'] as Map)
+            : null,
       );
 
   Map<String, dynamic> toJson() => {
@@ -34,12 +40,15 @@ class NotificationModel extends AppNotification {
         'entity_id': entityId,
         'is_read': isRead,
         'created_at': createdAt.toIso8601String(),
+        if (data != null) 'data': data,
       };
 
   Map<String, dynamic> toInsertJson() {
     final j = toJson();
     j.remove('id');
     j.remove('created_at');
+    // `entity_id` غير موجود في جدول السيرفر — إرساله يفشل بـ PostgREST.
+    j.remove('entity_id');
     return j;
   }
 
@@ -52,6 +61,7 @@ class NotificationModel extends AppNotification {
         entityId: e.entityId,
         isRead: e.isRead,
         createdAt: e.createdAt,
+        data: e.data,
       );
 
   AppNotification toEntity() => AppNotification(
@@ -63,5 +73,6 @@ class NotificationModel extends AppNotification {
         entityId: entityId,
         isRead: isRead,
         createdAt: createdAt,
+        data: data,
       );
 }

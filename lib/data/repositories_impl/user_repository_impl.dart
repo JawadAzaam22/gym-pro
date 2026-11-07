@@ -59,6 +59,28 @@ class UserRepositoryImpl implements IUserRepository {
   }
 
   @override
+  Future<Either<Failure, String>> issueTraineeQrToken() async {
+    try {
+      return Right(await datasource.issueTraineeQrToken());
+    } on ServerException catch (e) {
+      return Left(ServerFailure(e.message));
+    } catch (e) {
+      return Left(ServerFailure(e.toString()));
+    }
+  }
+
+  @override
+  Future<Either<Failure, User>> resolveTraineeQrToken(String token) async {
+    try {
+      return Right((await datasource.resolveTraineeQrToken(token)).toEntity());
+    } on ServerException catch (e) {
+      return Left(ServerFailure(e.message));
+    } catch (e) {
+      return Left(ServerFailure(e.toString()));
+    }
+  }
+
+  @override
   Future<Either<Failure, User>> createUser(User user, String password) async {
     try {
       final model = UserModel.fromEntity(user);
@@ -97,7 +119,8 @@ class UserRepositoryImpl implements IUserRepository {
   }
 
   @override
-  Future<Either<Failure, void>> deleteUser(String id, {bool cascade = false}) async {
+  Future<Either<Failure, void>> deleteUser(String id,
+      {bool cascade = false}) async {
     try {
       await datasource.deleteUser(id, cascade: cascade);
       return const Right(null);

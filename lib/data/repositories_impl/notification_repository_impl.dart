@@ -24,8 +24,9 @@ class NotificationRepositoryImpl implements INotificationRepository {
   }
 
   @override
-  Stream<List<AppNotification>> watchMyNotifications() =>
-      datasource.watchMyNotifications().map((l) => l.map((e) => e.toEntity()).toList());
+  Stream<List<AppNotification>> watchMyNotifications() => datasource
+      .watchMyNotifications()
+      .map((l) => l.map((e) => e.toEntity()).toList());
 
   @override
   Future<Either<Failure, void>> markAsRead(int id) async {

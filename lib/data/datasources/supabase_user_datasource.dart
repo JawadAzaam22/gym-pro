@@ -47,9 +47,37 @@ class SupabaseUserDatasource {
     }
   }
 
+  Future<String> issueTraineeQrToken() async {
+    try {
+      final result = await client.rpc('issue_trainee_qr_token');
+      if (result is! String || result.isEmpty) {
+        throw ServerException('لم يتم إنشاء رمز QR صالح');
+      }
+      return result;
+    } catch (e) {
+      if (e is ServerException) rethrow;
+      throw ServerException('فشل إنشاء رمز QR: $e');
+    }
+  }
+
+  Future<UserModel> resolveTraineeQrToken(String token) async {
+    try {
+      final result = await client
+          .rpc('resolve_trainee_qr_token', params: {'p_token': token});
+      if (result is! List || result.isEmpty) {
+        throw ServerException('رمز QR غير صالح أو منتهي الصلاحية');
+      }
+      return UserModel.fromJson(Map<String, dynamic>.from(result.first as Map));
+    } catch (e) {
+      if (e is ServerException) rethrow;
+      throw ServerException('فشل التحقق من رمز QR: $e');
+    }
+  }
+
   Future<List<UserModel>> getUsersByRole(String role) async {
     try {
-      final data = await client.from('profiles').select().eq('role', role).order('name');
+      final data =
+          await client.from('profiles').select().eq('role', role).order('name');
       return (data as List).map((e) => UserModel.fromJson(e)).toList();
     } catch (e) {
       throw ServerException('فشل جلب المستخدمين حسب الدور: $e');
@@ -67,10 +95,14 @@ class SupabaseUserDatasource {
     };
     try {
       final res = await client.functions.invoke('create-user', body: payload);
-      if (kDebugMode) debugPrint('[create-user] STATUS: ${res.status}, DATA: ${res.data}');
+      if (kDebugMode) {
+        debugPrint('[create-user] STATUS: ${res.status}, DATA: ${res.data}');
+      }
       final data = res.data;
       if (res.status != 200) {
-        final msg = (data is Map && data['error'] != null) ? data['error'].toString() : data.toString();
+        final msg = (data is Map && data['error'] != null)
+            ? data['error'].toString()
+            : data.toString();
         throw ServerException('فشل إنشاء المستخدم: $msg');
       }
       return UserModel.fromJson(Map<String, dynamic>.from(data as Map));
@@ -88,8 +120,15 @@ class SupabaseUserDatasource {
 
   Future<UserModel> updateUser(UserModel user) async {
     try {
-      final map = user.toJson()..remove('id')..remove('created_at');
-      final updated = await client.from('profiles').update(map).eq('id', user.id).select().single();
+      final map = user.toJson()
+        ..remove('id')
+        ..remove('created_at');
+      final updated = await client
+          .from('profiles')
+          .update(map)
+          .eq('id', user.id)
+          .select()
+          .single();
       return UserModel.fromJson(updated);
     } catch (e) {
       throw ServerException('فشل تحديث المستخدم: $e');

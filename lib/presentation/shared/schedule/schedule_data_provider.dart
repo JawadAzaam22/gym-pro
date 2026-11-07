@@ -11,17 +11,17 @@ final scheduleDataProvider = FutureProvider((ref) async {
   // (sessions/users/halls/periods/sessionPeriods) تُنتظر واحدة تلو الأخرى
   // رغم عدم اعتماد أي منها على نتيجة الأخرى، فيتضاعف زمن تحميل شاشة الجدول
   // بلا داعٍ. الآن الزمن الكلي يقترب من زمن أبطأ استعلام واحد فقط.
-  final sessionsFuture = ref.read(sessionRepositoryProvider).getSessions();
-  final usersFuture = ref.read(userRepositoryProvider).getAllUsers();
-  final hallsFuture = ref.read(hallRepositoryProvider).getHalls();
+  final sessionsFuture = ref.read(sessionUseCasesProvider).getSessions();
+  final usersFuture = ref.read(userUseCasesProvider).getAllUsers();
+  final hallsFuture = ref.read(hallUseCasesProvider).getHalls();
   // كانت فترات الوصول تُجلب قاعة قاعة (N طلب شبكة لكل N قاعة) داخل حلقة for.
   // استبدلناها باستدعاء واحد (getAllAccessPeriods) يجلب كل الفترات دفعة واحدة.
-  final periodsFuture = ref.read(hallRepositoryProvider).getAllAccessPeriods();
+  final periodsFuture = ref.read(hallUseCasesProvider).getAllAccessPeriods();
   final sessionPeriodsFuture =
-      ref.read(sessionRepositoryProvider).getAllSessionPeriods();
+      ref.read(sessionUseCasesProvider).getAllSessionPeriods();
   final userId = ref.read(authControllerProvider).value?.id;
   final bookingsFuture = userId != null
-      ? ref.read(bookingRepositoryProvider).getBookingsByTrainee(userId)
+      ? ref.read(bookingUseCasesProvider).getBookingsByTrainee(userId)
       : null;
 
   final sessionsRes = await sessionsFuture;

@@ -10,18 +10,23 @@ final traineePrivateSessionsProvider =
   if (traineeId.isEmpty) {
     throw Exception('لا يوجد مستخدم مسجل الدخول');
   }
-  final datasource = ref.read(bookingDatasourceProvider);
-  final relations = await datasource.getTrainerTrainees(traineeId: traineeId);
+  final relationsResult = await ref.read(getTrainerTraineesProvider).call(
+        traineeId: traineeId,
+      );
+  final relations =
+      relationsResult.fold((l) => throw Exception(l.message), (r) => r);
   final relationIds = relations.map((r) => r.id).toSet();
   if (relationIds.isEmpty) return [];
   // ملاحظة أداء: getPrivateSessions تجلب كل الجلسات من الخادم ثم تُصفّي
   // محليًا حسب trainerTraineeId، لذا استدعاؤها مرة واحدة لكل علاقة (كما كان
   // سابقًا في حلقة for) كان يعيد تحميل الجدول كاملاً من الخادم N مرة بلا
   // داعٍ. نستدعيها هنا مرة واحدة فقط ونُصفّي محليًا لكل علاقات المتدرب معًا.
-  final allSessions = await datasource.getPrivateSessions();
+  final sessionsResult =
+      await ref.read(getPrivateTrainingSessionsProvider).call();
+  final allSessions =
+      sessionsResult.fold((l) => throw Exception(l.message), (r) => r);
   final result = allSessions
       .where((s) => relationIds.contains(s.trainerTraineeId))
-      .map((session) => session.toEntity())
       .toList();
   result.sort((a, b) => a.sessionDate.compareTo(b.sessionDate));
   return result;
@@ -34,6 +39,7 @@ final traineeFixedScheduleProvider =
   if (traineeId.isEmpty) {
     throw Exception('لا يوجد مستخدم مسجل الدخول');
   }
-  final res = await ref.read(bookingRepositoryProvider).getScheduleForTrainee(traineeId);
+  final res =
+      await ref.read(getPrivateScheduleForTraineeProvider).call(traineeId);
   return res.fold((l) => throw Exception(l.message), (r) => r);
 });
