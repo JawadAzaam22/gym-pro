@@ -6,9 +6,17 @@ import 'package:gym_pro/presentation/reception/checkin/screens/checkin_screen.da
 
 void main() {
   testWidgets('reception checkin drawer hover/open/close does not crash hit test', (tester) async {
+    final scaffoldKey = GlobalKey<ScaffoldState>();
+
     await tester.pumpWidget(
-      const ProviderScope(
-        child: MaterialApp(home: CheckinScreen()),
+      ProviderScope(
+        child: MaterialApp(
+          home: Scaffold(
+            key: scaffoldKey,
+            drawer: const Drawer(),
+            body: const CheckinScreen(),
+          ),
+        ),
       ),
     );
     await tester.pumpAndSettle();
@@ -23,14 +31,14 @@ void main() {
     await tester.pumpAndSettle();
 
     // open drawer via scaffold
-    final scaffoldState = tester.state<ScaffoldState>(find.byType(Scaffold).first);
+    final scaffoldState = scaffoldKey.currentState!;
     scaffoldState.openDrawer();
     await tester.pumpAndSettle();
     await gesture.moveTo(const Offset(200, 300));
     await tester.pumpAndSettle();
 
     // close drawer
-    Navigator.of(tester.element(find.byType(Scaffold).first)).pop();
+    Navigator.of(scaffoldState.context).pop();
     await tester.pumpAndSettle();
     await gesture.moveTo(const Offset(400, 300));
     await tester.pumpAndSettle();
