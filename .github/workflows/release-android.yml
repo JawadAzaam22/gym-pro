@@ -33,7 +33,7 @@ jobs:
           [ -d android ] || { echo "::error::android/ folder is missing from the repository"; exit 1; }
           [ -n "$SUPABASE_URL" ] && [ -n "$SUPABASE_ANON_KEY" ] || { echo "::error::Repository variables SUPABASE_URL / SUPABASE_ANON_KEY are not set"; exit 1; }
 
-      - uses: actions/setup-java@v4
+      - uses: actions/setup-java@v6
         with:
           distribution: temurin
           java-version: "17"
