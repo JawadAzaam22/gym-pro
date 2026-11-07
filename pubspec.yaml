@@ -20,7 +20,7 @@ dependencies:
   go_router: ^14.0.0
 
   # UI
-  google_fonts: ^6.2.0
+  google_fonts: ^8.2.1
 
   # QR
   qr_flutter: ^4.1.0
