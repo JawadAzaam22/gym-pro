@@ -33,7 +33,7 @@ jobs:
       SUPABASE_ANON_KEY: ${{ vars.SUPABASE_ANON_KEY }}
       REPO: ${{ github.event.repository.name }}
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
 
       - uses: subosito/flutter-action@v2
         with:
