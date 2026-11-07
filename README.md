@@ -34,27 +34,35 @@ roles across three apps.
 
 ## Screenshots
 
-<!-- TODO(author): add these PNG files to the `screenshots/` folder (dark theme,
-     Arabic RTL; ~1440x900 for web, 390x844 for mobile). The images below render
-     once the files exist. Use demo accounts only. -->
-
 ### Administration (web)
 
-| Dashboard | Users | Financial reports |
-|---|---|---|
-| ![Admin dashboard](screenshots/admin.png) | ![User management](screenshots/admin_users.png) | ![Reports](screenshots/admin_reports.png) |
+| Dashboard | Users | Weekly program | Reports |
+|---|---|---|---|
+| ![Admin dashboard](screenshots/admin_dashboard.png) | ![User management](screenshots/admin_user.png) | ![Weekly program](screenshots/admin_program_weekly.png) | ![Reports](screenshots/admin_report.png) |
 
 ### Reception (web)
 
-| Dashboard | Check-in | Memberships |
-|---|---|---|
-| ![Reception dashboard](screenshots/reception.png) | ![Check-in](screenshots/reception_checkin.png) | ![Memberships](screenshots/reception_membership.png) |
-
-### Mobile — trainee and trainer
-
-| Trainee | Personal QR | Trainer | Notifications |
+| Dashboard | Memberships | QR check-in | Financial records |
 |---|---|---|---|
-| ![Trainee](screenshots/trainee.png) | ![QR](screenshots/trainee_qr.png) | ![Trainer](screenshots/trainer.png) | ![Notifications](screenshots/notifications.png) |
+| ![Reception dashboard](screenshots/reception_dashboard.png) | ![Memberships](screenshots/reception_membership.png) | ![QR check-in](screenshots/reception_qrcode.png) | ![Financial records](screenshots/reception_record_financial.png) |
+
+### Mobile — trainee
+
+| Home and personal QR | Notifications | Settings |
+|---|---|---|
+| ![Trainee home and personal QR](screenshots/mobile_trainee_home_qrcode.png) | ![Trainee notifications](screenshots/mobile_trainee_notification.png) | ![Trainee settings](screenshots/mobile_trainee_setting.png) |
+
+### Mobile — trainer
+
+| Home | Manage trainees | Schedule |
+|---|---|---|
+| ![Trainer home](screenshots/mobile_trainer_home.png) | ![Manage trainees](screenshots/mobile_trainer_mange_trainee.png) | ![Trainer schedule](screenshots/mobile_trainer_time.png) |
+
+### Mobile — shared
+
+| Weekly program |
+|---|
+| ![Weekly program](screenshots/mobile_weekly_program.png) |
 
 ## What it does
 
